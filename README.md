@@ -9,7 +9,7 @@ The diver, enemies, landmarks and room tiles use original code-authored pixel ar
 ## Play
 
 - **Windows download:** extract `Builds/Drowned-Bell-Full-Works-Windows-x64.zip` and open `Drowned Bell/DrownedBell.exe`. The folder includes the Unity runtime and a short controls guide. The unpackaged release player is `Builds/DutyPump/DrownedBell.exe`. For a new download, use **Drowned Bell > Build Windows** in Unity and then run `python tools/package_windows.py --output Builds/Drowned-Bell-Full-Works-Windows-x64.zip` from the project root.
-- **Earlier Belfry-only browser edition:** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
+- **In the browser (v0.3, both chapters, saves in the browser):** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
 - **In the editor:** Unity 6.6 (6000.6.10f1). Open `Assets/Scenes/Main.unity` and press Play. Any other scene also works, because `Bootstrap` creates the game if the scene has none.
 
 | Action | Keys |
