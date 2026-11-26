@@ -5,6 +5,14 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.2 (playable in the browser)
+
+- Web build (Unity WebGL) with its own full-window page, hosted on the portfolio site.
+- Browser-safe keys: I opens the inspector, 1 and 2 change shake and flashing while paused
+  (F1, F5 and F6 belong to the browser there). Quit is hidden in the browser.
+- The frame rate follows the display in the browser.
+- The "lamp lit, grate open" line no longer wraps onto a second line.
+
 ## v0.1 (first playable demo)
 
 - Seven rooms in one connected area: Belfry Landing, Flooded Nave, Ripple Walk, Gutter Shaft,

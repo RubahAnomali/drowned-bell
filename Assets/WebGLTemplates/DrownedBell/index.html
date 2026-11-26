@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{{ PRODUCT_NAME }}}</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b0f14; overflow: hidden; }
+      /* The game letterboxes itself, so the canvas simply fills the window. */
+      #unity-canvas { display: block; width: 100vw; height: 100vh; background: #0b0f14; outline: none; }
+      #loading {
+        position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px; color: #e6e1cf; font: 600 14px/1.2 ui-monospace, Consolas, monospace; letter-spacing: 0.2em;
+      }
+      #bar { width: 240px; height: 6px; background: #1f3340; }
+      #fill { width: 0; height: 100%; background: #f2c14e; transition: width 0.2s; }
+      #error { color: #e0584a; max-width: 60ch; text-align: center; letter-spacing: 0; }
+    </style>
+  </head>
+  <body>
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="loading"><div>DROWNED BELL</div><div id="bar"><div id="fill"></div></div><div id="error"></div></div>
+    <script src="Build/{{{ LOADER_FILENAME }}}"></script>
+    <script>
+      const canvas = document.querySelector("#unity-canvas");
+      // Right-click dashes toward the cursor, so the page must not open its own menu.
+      canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+      createUnityInstance(canvas, {
+        dataUrl: "Build/{{{ DATA_FILENAME }}}",
+        frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_WASM
+        codeUrl: "Build/{{{ CODE_FILENAME }}}",
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      }, (progress) => {
+        document.querySelector("#fill").style.width = 100 * progress + "%";
+      }).then(() => {
+        document.querySelector("#loading").remove();
+        canvas.focus();
+      }).catch((message) => {
+        document.querySelector("#error").textContent = message;
+      });
+    </script>
+  </body>
+</html>

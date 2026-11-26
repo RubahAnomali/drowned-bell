@@ -86,7 +86,8 @@ namespace DrownedBell.Game
             audioSynth = new AudioSynth(gameObject);
             shakeStrength = PlayerPrefs.GetFloat("ShakeStrength", 1f);
             reducedFlashing = PlayerPrefs.GetInt("ReducedFlashing", 0) != 0;
-            Application.targetFrameRate = 120;
+            // In a browser, -1 follows the display's refresh; a fixed rate there would drop requestAnimationFrame.
+            Application.targetFrameRate = GameInput.Web ? -1 : 120;
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-testroom") >= 0)
                 BeginTestRoom();
             else
@@ -287,12 +288,12 @@ namespace DrownedBell.Game
                     else if (GameInput.ConfirmOrClick) BeginDive();
                     break;
                 case Flow.Paused:
-                    if (Input.GetKeyDown(KeyCode.F5))
+                    if (GameInput.CycleShake)
                     {
                         shakeStrength = shakeStrength <= 0f ? 1f : shakeStrength - 0.5f;
                         PlayerPrefs.SetFloat("ShakeStrength", shakeStrength);
                     }
-                    if (Input.GetKeyDown(KeyCode.F6))
+                    if (GameInput.ToggleFlashing)
                     {
                         reducedFlashing = !reducedFlashing;
                         PlayerPrefs.SetInt("ReducedFlashing", reducedFlashing ? 1 : 0);
@@ -447,7 +448,7 @@ namespace DrownedBell.Game
                     GUI.DrawTexture(r, mask);
                     GUI.color = old;
                 }
-                if (world.LampLit) Label(new Rect(3 * u, 8.5f * u, 40 * u, 4 * u), "lamp lit" + (world.GrateOpen ? "   grate open" : ""), small, Palette.A(Palette.Warm, 0.8f));
+                if (world.LampLit) Label(new Rect(3 * u, 8.5f * u, 60 * u, 4 * u), "lamp lit" + (world.GrateOpen ? "   grate open" : ""), small, Palette.A(Palette.Warm, 0.8f));
                 if (testTarget != null)
                 {
                     Label(new Rect(3 * u, 9 * u, 56 * u, 4 * u), $"Test Room   Target hits {testTarget.Hits}", small, Palette.Warm);
@@ -482,16 +483,16 @@ namespace DrownedBell.Game
                     Overlay("DROWNED BELL", "A salvage diver climbs down a flooded bell tower to silence the bell that keeps drowning the halls.",
                         "Move A / D    Jump Space    Swing X / J    Dash Shift\n" +
                         "Aim W / S    Left click swings    Right click dashes\n" +
-                        "Esc pause    M mute    F1 inspector\n\nEnter or click to dive    T test room    Q quit");
+                        "Esc pause    M mute    " + (GameInput.Web ? "I" : "F1") + " inspector\n\nEnter or click to dive    T test room" + (GameInput.Web ? "" : "    Q quit"));
                     break;
                 case Flow.Paused:
-                    Overlay("PAUSED", "Esc, Enter or click to resume.   Q to quit.",
+                    Overlay("PAUSED", "Esc, Enter or click to resume." + (GameInput.Web ? "" : "   Q to quit."),
                         (testTarget != null ? "T returns to the title.\n" : "Down-swing in the air to bounce off enemies and spikes.\n") +
-                        $"F5 camera shake {shakeStrength:P0}   F6 reduced flashing {(reducedFlashing ? "on" : "off")}");
+                        $"1 camera shake {shakeStrength:P0}   2 reduced flashing {(reducedFlashing ? "on" : "off")}");
                     break;
                 case Flow.Victory:
                     Overlay("THE BELL IS SILENT", "The water stills. The lower halls will drain by morning.",
-                        "Time " + FormatTime(world.Time) + "        Deaths " + world.Deaths + "        Brass Lung " + (world.LungTaken ? "found" : "missed") + "\n\nPress Enter or click to dive again          Q to quit");
+                        "Time " + FormatTime(world.Time) + "        Deaths " + world.Deaths + "        Brass Lung " + (world.LungTaken ? "found" : "missed") + "\n\nPress Enter or click to dive again" + (GameInput.Web ? "" : "          Q to quit"));
                     break;
             }
 
@@ -542,7 +543,7 @@ namespace DrownedBell.Game
 
             var lines = new List<string>
             {
-                "INSPECTOR (F1)   fps " + fps.ToString("0") + "   sim 60 Hz   time " + FormatTime(world.Time) + "   deaths " + world.Deaths,
+                "INSPECTOR (F1 / I)   fps " + fps.ToString("0") + "   sim 60 Hz   time " + FormatTime(world.Time) + "   deaths " + world.Deaths,
                 "room " + (world.Room >= 0 ? world.Level.Rooms[world.Room].Name : "-") + "   grate " + (world.GrateOpen ? "open" : "closed") + "   doors " + (world.Level.DoorsLocked ? "locked" : "open"),
                 "diver pos " + p.Body.Pos + " vel " + p.Body.Vel + (p.Body.Grounded ? " grounded" : " air") + (p.Body.OnOneWay ? " (ledge)" : "") + (p.Dashing ? " DASH" : "") + (p.AirDashUsed ? " airdash-used" : ""),
                 "hp " + p.Health + "/" + p.MaxHealth + "   invuln " + p.Invuln.ToString("0.00") + "   stun " + p.Stun.ToString("0.00") + "   swing " + (p.Attacking ? p.Attack + " " + p.AttackTime.ToString("0.00") : "-"),

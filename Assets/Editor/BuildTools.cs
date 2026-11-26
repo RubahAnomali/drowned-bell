@@ -52,4 +52,33 @@ public static class BuildTools
         Debug.Log("DROWNED BELL BUILD: " + report.summary.result + ", " + report.summary.totalErrors + " errors, " + (report.summary.totalSize / (1024 * 1024)) + " MB at " + ExePath);
         if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
     }
+
+    /// <summary>
+    /// Browser build for the portfolio site. Files are left uncompressed: static hosts (Vercel) compress them
+    /// on the fly, while Unity's own .br/.gz files would need custom Content-Encoding headers to load.
+    /// </summary>
+    [MenuItem("Drowned Bell/Build Web")]
+    public static void BuildWebGL()
+    {
+        const string WebPath = "Builds/WebGL";
+        if (!File.Exists(ScenePath)) CreateScene();
+        PlayerSettings.productName = "Drowned Bell";
+        PlayerSettings.companyName = "RubahAnomali";
+        PlayerSettings.WebGL.template = "PROJECT:DrownedBell";
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+        PlayerSettings.WebGL.decompressionFallback = false;
+        PlayerSettings.WebGL.nameFilesAsHashes = false;
+        PlayerSettings.WebGL.dataCaching = true;
+        PlayerSettings.runInBackground = false;
+        var opts = new BuildPlayerOptions
+        {
+            scenes = new[] { ScenePath },
+            locationPathName = WebPath,
+            target = BuildTarget.WebGL,
+            options = BuildOptions.None,
+        };
+        BuildReport report = BuildPipeline.BuildPlayer(opts);
+        Debug.Log("DROWNED BELL WEB BUILD: " + report.summary.result + ", " + report.summary.totalErrors + " errors, " + (report.summary.totalSize / (1024 * 1024)) + " MB at " + WebPath);
+        if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
+    }
 }

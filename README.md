@@ -9,6 +9,7 @@ Original pixel art, synthesized sound and room layouts are authored in code. The
 ## Play
 
 - **Latest tested Windows build:** `Builds/QA/DrownedBell.exe` (windowed 1600x900, resizable). The `Builds/` folder is not in git; the editor command **Drowned Bell > Build Windows** writes a separate build to `Builds/Windows/`.
+- **In the browser:** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
 - **In the editor:** Unity 6.6 (6000.6.10f1). Open `Assets/Scenes/Main.unity` and press Play. Any other scene also works, because `Bootstrap` creates the game if the scene has none.
 
 | Action | Keys |
@@ -19,10 +20,10 @@ Original pixel art, synthesized sound and room layouts are authored in code. The
 | Dash | C, Left Shift or K. Right-click to dash toward the cursor |
 | Pause | Esc |
 | Mute | M |
-| Inspector (hitboxes, states) | F1 |
+| Inspector (hitboxes, states) | F1 or I (I in the browser) |
 | Test room | T on the title screen, or launch with `-testroom`. Pause and press T to return to the title |
-| Shake strength and reduced flashing | F5 and F6 while paused |
-| Quit (title, pause, ending) | Q |
+| Shake strength and reduced flashing | 1 and 2 while paused (F5 and F6 also work in the Windows build) |
+| Quit (title, pause, ending) | Q (Windows build only) |
 
 A down-swing in the air bounces off enemies and spikes (pogo) and gives back the air dash. When the bell rises for a slam, you can run underneath it to the open side.
 

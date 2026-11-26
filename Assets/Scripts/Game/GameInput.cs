@@ -79,8 +79,12 @@ namespace DrownedBell.Game
         /// <summary>Enter, or a left click, on a menu screen.</summary>
         public static bool ConfirmOrClick => Confirm || Input.GetMouseButtonDown(0);
         public static bool Pause => AnyDown(KeyCode.Escape, KeyCode.P, KeyCode.JoystickButton6);
-        public static bool Debug => AnyDown(KeyCode.F1);
+        /// <summary>Running in a browser: F-keys belong to the browser there (F5 reloads, F1 opens help) and Quit does nothing.</summary>
+        public static readonly bool Web = Application.platform == RuntimePlatform.WebGLPlayer;
+        public static bool Debug => AnyDown(KeyCode.F1, KeyCode.I);
         public static bool Mute => AnyDown(KeyCode.M);
-        public static bool Quit => AnyDown(KeyCode.Q);
+        public static bool Quit => !Web && AnyDown(KeyCode.Q);
+        public static bool CycleShake => AnyDown(KeyCode.F5, KeyCode.Alpha1);
+        public static bool ToggleFlashing => AnyDown(KeyCode.F6, KeyCode.Alpha2);
     }
 }
