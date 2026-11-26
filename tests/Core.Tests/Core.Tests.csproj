@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Headless checks for Assets/Scripts/Core. The simulation has no UnityEngine dependency, so the same files compile here. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Assets\Scripts\Core\*.cs" />
+    <Compile Include="*.cs" />
+    <None Include="../../Assets/Scenes/Main.unity" Link="Main.unity" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

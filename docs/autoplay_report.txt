@@ -1,0 +1,50 @@
+DROWNED BELL autoplay report
+result: VICTORY
+game time to victory: 178.2s
+real time: 192s
+deaths: 2 (planned boss retries 2)   victory events: 1
+boss retry, respawn to arena: 5.4s, 5.4s (+1.6s death fade)
+shortcut climbed: True   lamp True   lung True   grate True
+moves that landed off-plan: 0   no-path events: 0
+reached Lamp at 0.5s
+reached Lung at 47.1s
+reached Winch at 49.6s
+reached ShortcutUp at 58.2s
+reached Arena at 63.4s
+movement graph: 299 spots, built in 0.8s
+pause: simulation frozen while paused = True
+resized to 1280x720 (camera aspect 1.78)
+dive again: new run time 1.5s, deaths 0, lamp False, grate False, lung False, boss Dormant hp 26, phase Playing, enemies alive 4/4
+runtime errors: 0
+--- pilot log ---
+0:00.5  tide lamp lit
+0:10.1  enemy 0 killed
+0:28.1  enemy 3 killed
+0:44.5  enemy 2 killed
+0:47.1  Brass Lung taken
+0:49.6  winch hit, grate open
+0:58.2  climbed the shortcut back to the lamp
+1:04.0  the Undertoll wakes
+1:11.0  hurt, 5 masks left
+1:14.0  hurt, 4 masks left
+1:17.0  hurt, 3 masks left
+1:20.0  hurt, 2 masks left
+1:22.3  hurt, 1 masks left
+1:23.8  hurt, 0 masks left
+1:23.8  died (death 1)
+1:23.8  respawned at the lamp
+1:29.2  back in the arena 5.4s after respawning
+1:29.8  the Undertoll wakes
+1:36.7  hurt, 5 masks left
+1:39.7  hurt, 4 masks left
+1:42.7  hurt, 3 masks left
+1:45.7  hurt, 2 masks left
+1:48.0  hurt, 1 masks left
+1:49.6  hurt, 0 masks left
+1:49.6  died (death 2)
+1:49.6  respawned at the lamp
+1:54.9  back in the arena 5.4s after respawning
+1:55.5  the Undertoll wakes
+2:17.8  boss phase two
+2:55.0  the Undertoll falls silent
+2:58.2  VICTORY screen

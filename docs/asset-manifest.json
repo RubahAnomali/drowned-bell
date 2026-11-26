@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "art_direction_brief": "docs/ART_DIRECTION.md",
+  "assets": [
+    {
+      "id": "ripple-bell",
+      "role": "Visible source and wind-up cue for the training shockwave",
+      "path": "Assets/Scripts/Game/Art.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "12x12",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 1,
+        "filtering": "nearest"
+      },
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original",
+        "record": "Art.TrainingBell"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true,
+        "rgba_entries": 6
+      }
+    },
+    {
+      "id": "diver",
+      "role": "Player silhouette and readable movement states",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "12x16",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 3,
+        "filtering": "nearest"
+      },
+      "states": [
+        "idle",
+        "stride",
+        "air"
+      ],
+      "variants": [
+        "separate hook"
+      ],
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "brine-crab",
+      "role": "Claw silhouette and lunge anticipation",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "20x12",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 1,
+        "filtering": "nearest"
+      },
+      "states": [
+        "wind-up claw",
+        "lunge",
+        "recover"
+      ],
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "knell-jelly",
+      "role": "Pulse anticipation and punish window",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "16x16",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 1,
+        "filtering": "nearest"
+      },
+      "states": [
+        "drift",
+        "wind-up",
+        "spent"
+      ],
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "undertoll",
+      "role": "Boss telegraphs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "48x48",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 1,
+        "filtering": "nearest"
+      },
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "states": [
+        "phase-two crack overlay"
+      ],
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "tower-tiles-and-props",
+      "role": "Collidable edges, hazards, navigation and landmarks",
+      "status": "implemented",
+      "technical": {
+        "grid": "16x16",
+        "alpha": true,
+        "anchor": "tile-aligned",
+        "filtering": "nearest"
+      },
+      "variants": [
+        "rock edges",
+        "ledge",
+        "spikes",
+        "lamp lit/unlit",
+        "winch",
+        "grate",
+        "Brass Lung",
+        "waterline and arch layers"
+      ],
+      "path": "Assets/Scripts/Game/LevelView.cs",
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original"
+      }
+    },
+    {
+      "id": "hud",
+      "role": "Health, boss progress and labels",
+      "status": "implemented",
+      "technical": {
+        "glyphs": "5x7",
+        "alpha": true,
+        "filtering": "nearest"
+      },
+      "variants": [
+        "helmet full/empty",
+        "boss bar frame",
+        "caps, digits and punctuation"
+      ],
+      "path": "Assets/Scripts/Game/PixelFont.cs",
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original"
+      }
+    }
+  ]
+}
