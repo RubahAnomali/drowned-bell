@@ -4,6 +4,8 @@ A short 2D side-scrolling action demo in Unity. A small salvage diver climbs dow
 
 Original pixel art, synthesized sound and room layouts are authored in code. The game renders at 512×288 and scales to the window with nearest-neighbor filtering.
 
+**Versions:** `main` is the current version; each finished version is kept on its own branch (`v0.1`, `v0.2`, ...). See [CHANGELOG.md](CHANGELOG.md).
+
 ## Play
 
 - **Latest tested Windows build:** `Builds/QA/DrownedBell.exe` (windowed 1600x900, resizable). The `Builds/` folder is not in git; the editor command **Drowned Bell > Build Windows** writes a separate build to `Builds/Windows/`.
