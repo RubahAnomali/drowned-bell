@@ -38,6 +38,28 @@ namespace DrownedBell.Game
             ap.dir = args[i + 1];
             int r = Array.IndexOf(args, "-retries");
             if (r >= 0 && r + 1 < args.Length && int.TryParse(args[r + 1], out int n)) ap.retries = n;
+            int f = Array.IndexOf(args, "-frames");
+            if (f >= 0 && f + 1 < args.Length) ap.framesDir = args[f + 1];
+        }
+
+        /// <summary>
+        /// "-frames &lt;folder&gt;" saves every frame of the boss fight, at a fixed 30 fps of game time, as numbered PNGs
+        /// (for the portfolio clip: ffmpeg -framerate 30 -i f%05d.png). Capture time does not slow the game down.
+        /// </summary>
+        string framesDir;
+        bool recording;
+
+        IEnumerator Record()
+        {
+            recording = true;
+            Directory.CreateDirectory(framesDir);
+            Time.captureFramerate = 30;
+            for (int i = 0; i < 30 * 60 && game.CurrentWorld.Phase != Phase.Victory; i++)
+            {
+                yield return new WaitForEndOfFrame();
+                ScreenCapture.CaptureScreenshot(Path.Combine(framesDir, "f" + i.ToString("00000") + ".png"));
+            }
+            Time.captureFramerate = 0;
         }
 
         void OnEnable() { Application.logMessageReceived += OnLog; }
@@ -143,7 +165,10 @@ namespace DrownedBell.Game
                 case GameEventType.LampLit: Shot("lamp_lit"); break;
                 case GameEventType.LungTaken: Shot("brass_lung"); break;
                 case GameEventType.WinchPulled: Shot("winch_grate_open"); break;
-                case GameEventType.BossAwake: Shot("boss_awake_" + pilot.RetriesDone); break;
+                case GameEventType.BossAwake:
+                    Shot("boss_awake_" + pilot.RetriesDone);
+                    if (framesDir != null && !recording) StartCoroutine(Record());
+                    break;
                 case GameEventType.BossPhase2: Shot("boss_phase2"); break;
                 case GameEventType.BossDefeated: Shot("boss_defeated"); break;
                 case GameEventType.PlayerDied: deaths++; Shot("death_" + deaths); break;
