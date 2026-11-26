@@ -86,6 +86,171 @@ namespace DrownedBell.Game
             "..........v.....",
         }, Inks);
 
+        static Sprite tideLamp;
+        public static Sprite TideLamp => tideLamp ??= Art.PixelSprite(new[]
+        {
+            ".......xx.......",
+            "......xtwx......",
+            ".....xwaatx.....",
+            "....xaaaaaax....",
+            "...xrrraarrrx...",
+            "....xwt..twx....",
+            "....xwt..twx....",
+            "....xwt..twx....",
+            "....xwt..twx....",
+            "...xraaaaaaax...",
+            "....xrrarrxx....",
+            "......xttx......",
+            "......xwtx......",
+            "......xwtx......",
+            ".....xaaaarx....",
+            "......xttx......",
+            "......xwtx......",
+            "......xwtx......",
+            "......xttx......",
+            ".....xttttx.....",
+            "....xwwtttsx....",
+            "...xttttssssx...",
+        }, Inks);
+
+        static Sprite winch;
+        public static Sprite Winch => winch ??= Art.PixelSprite(new[]
+        {
+            ".....xxxxxx.....",
+            "...xxeaaaarxx...",
+            "..xeaarrrraarx..",
+            ".xaarx....xrarx.",
+            ".xarxax..xaxrax.",
+            "xeax.xaxxaax.rax",
+            "xarx..xeerx..rax",
+            "xarraaeaaraaarax",
+            "xarrraaraarrrrax",
+            "xarx..xaarx..rax",
+            "xrax.xarxax..rax",
+            ".xarxax..xaxarx.",
+            ".xraax....xaarx.",
+            "..xraarrrraarx..",
+            "...xxrraaarrx...",
+            ".....xxxxxx.....",
+        }, Inks);
+
+        static Sprite brassLung;
+        public static Sprite BrassLung => brassLung ??= Art.PixelSprite(new[]
+        {
+            ".....xxxxx......",
+            "....xfwiatx.....",
+            ".....xttax......",
+            "...xxaaaarxx....",
+            "..xeearraaarx...",
+            ".xieaaxxraaarx..",
+            ".xeaarrxraaaarx.",
+            ".xaaattxraattarx",
+            ".xeaaaxxraaaaarx",
+            ".xaaattxraatttrx",
+            ".xaaaaxxraaaaarx",
+            "..xaarx..xraarx.",
+            "...xxx....xxxx..",
+        }, Inks);
+
+        static Sprite ventPlate;
+        public static Sprite VentPlate => ventPlate ??= Art.PixelSprite(new[]
+        {
+            "..xxxxxxxxxxxx..",
+            "xawwttwttwttwaax",
+            "xtrrarrarrarratx",
+            ".xxxxxxxxxxxxxx.",
+        }, Inks);
+
+        static Sprite steamJet;
+        public static Sprite SteamJet => steamJet ??= Art.PixelSprite(new[]
+        {
+            ".f......",
+            "..w...f.",
+            "..f...w.",
+            "...w.f..",
+            ".f.f.w..",
+            ".w..f.w.",
+            "..f.f.w.",
+            "..w.i.f.",
+            ".w.f..w.",
+            ".f.i.f..",
+            "..wff.w.",
+            "..f.w.f.",
+            "...fiff.",
+            "..wifw..",
+            "..fwif..",
+            ".wifwfw.",
+            ".ffifw..",
+            "..fifwf.",
+            "..wfiif.",
+            ".fififw.",
+            "..iifif.",
+            "..fiiwf.",
+            "..ififi.",
+            "...iif..",
+        }, Inks);
+
+        static Sprite outletHatch;
+        public static Sprite OutletHatch => outletHatch ??= Art.PixelSprite(new[]
+        {
+            "....xxxxxxxx....",
+            "..xxttwwttssxx..",
+            ".xttwfffwwttssx.",
+            "xtwftttssstttssx",
+            "xtwtxxxxxxxxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnaannxtssx",
+            "xtwtxnnnaannxtss",
+            "xtwtxnaaaannxtss",
+            "xtwtxnnnaannxtsx",
+            "xtwtxnnaannxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwtxnnnnnnxtssx",
+            "xtwttwwwwwwttssx",
+            "xtwwwtttttttsssx",
+            "xxxxxxxxxxxxxxxx",
+        }, Inks);
+
+        static Sprite pumpKey;
+        public static Sprite PumpKey => pumpKey ??= Art.PixelSprite(new[]
+        {
+            "..xxxx......",
+            ".xaeiax.....",
+            "xat..fax....",
+            "xat..wax....",
+            ".xaraaax....",
+            "..xxxxrax...",
+            "......xrax..",
+            ".......xrax.",
+            "........xrax",
+            ".......aaax.",
+            ".......xax..",
+            "........x...",
+        }, Inks);
+
+        static Sprite gaugePlate;
+        public static Sprite GaugePlate => gaugePlate ??= Art.PixelSprite(new[]
+        {
+            "..xxxxxxxxxx..",
+            ".xaaaaaaaaarx.",
+            "xawfffffffwrax",
+            "xawt.t.t.twrax",
+            "xawt..d..twrax",
+            "xawt...d.twrax",
+            "xawsssssstwrax",
+            ".xraaaaaaarxx.",
+            "..xaarraaarx..",
+            "...xxxxxxxx...",
+        }, Inks);
+
         public static Sprite Mask => mask ??= Art.PixelSprite(new[]
         {
             "....xxxx....", "...xiiaax...", "..xiiiiaax..", "..xixtttax..",

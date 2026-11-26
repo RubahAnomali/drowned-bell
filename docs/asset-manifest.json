@@ -175,6 +175,265 @@
         "kind": "original-authored-in-code",
         "license": "project-original"
       }
+    },
+    {
+      "id": "TideLamp",
+      "role": "Checkpoint housing with a separately lit pilot light",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "16x22",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 1,
+        "filtering": "nearest",
+        "collision": "visual only"
+      },
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original",
+        "record": "PixelArt.TideLamp"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "Winch",
+      "role": "Spoked wheel with a moving shortcut lever",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "16x16",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 1,
+        "filtering": "nearest",
+        "collision": "visual only"
+      },
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original",
+        "record": "PixelArt.Winch"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "BrassLung",
+      "role": "Optional health upgrade with twin brass chambers",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "16x13",
+        "alpha": true,
+        "anchor": "center",
+        "frames": 1,
+        "filtering": "nearest",
+        "collision": "visual only"
+      },
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original",
+        "record": "PixelArt.BrassLung"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "belfry-portrait",
+      "role": "Title and ending illustration",
+      "path": "Assets/Resources/Belfry.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "192x288",
+        "colors": 24,
+        "alpha": false,
+        "frames": 1,
+        "filtering": "nearest",
+        "anchor": "right edge of 512x288 canvas",
+        "collision": "none"
+      },
+      "source": {
+        "kind": "generated with built-in OpenAI image generation",
+        "license": "project-generated artwork",
+        "record": "Cropped to portrait, reduced to the native pixel grid and quantized to 24 colors.",
+        "prompt": "Original portrait 2:3 pixel-art key illustration for Drowned Bell. A lone tiny brass helmet salvage diver with a hook stands on a broken flooded stair, facing an enormous patinated bronze church bell suspended by chains inside a drowned gothic arch. Giant dark bell at upper center, broad lip rim picked out in warm tarnished gold, teal stone arcades behind. Reflected gold and seafoam on still water in lower third. Restrained old adventure game pixel clusters, stepped diagonals, distinct foreground, strong graphic negative space, dark ink navy #0b0f14, deep teal stone, muted seafoam, small amber glints. Design to read at 192x288 pixels. Entire visual fits portrait, no letters, no typography, no borders, no interface."
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "VentPlate",
+      "role": "Slotted floor valve under each pressure lane",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "16x4",
+        "alpha": true,
+        "frames": 1,
+        "filtering": "nearest",
+        "anchor": "center"
+      },
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original",
+        "record": "PixelArt.VentPlate"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "SteamJet",
+      "role": "Small warning puff and full-height damaging column",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "8x24",
+        "alpha": true,
+        "frames": 1,
+        "filtering": "nearest",
+        "anchor": "center"
+      },
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original",
+        "record": "PixelArt.SteamJet"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "OutletHatch",
+      "role": "Inspection hatch beyond the valve gate",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "16x24",
+        "alpha": true,
+        "frames": 1,
+        "filtering": "nearest",
+        "anchor": "center"
+      },
+      "source": {
+        "kind": "original-authored-in-code",
+        "license": "project-original",
+        "record": "PixelArt.OutletHatch"
+      },
+      "verification": {
+        "technical_checks_passed": true,
+        "preview_sheet_reviewed": true
+      }
+    },
+    {
+      "id": "Piston Limpet",
+      "role": "Works combat actor",
+      "path": "Assets/Resources/PumpMachines.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "24x24",
+        "frames": 4,
+        "alpha": true,
+        "filtering": "nearest",
+        "anchor": "bottom center"
+      },
+      "source": {
+        "kind": "original pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "Chain Porter",
+      "role": "Works combat actor",
+      "path": "Assets/Resources/PumpMachines.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "28x28",
+        "frames": 4,
+        "alpha": true,
+        "filtering": "nearest",
+        "anchor": "bottom center"
+      },
+      "source": {
+        "kind": "original pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "Pump Warden",
+      "role": "Works combat actor",
+      "path": "Assets/Resources/PumpMachines.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "56x56",
+        "frames": 4,
+        "alpha": true,
+        "filtering": "nearest",
+        "anchor": "bottom center"
+      },
+      "source": {
+        "kind": "original pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "GaugePlate",
+      "role": "Optional keeper record",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "14x10",
+        "frames": 1,
+        "alpha": true,
+        "filtering": "nearest",
+        "anchor": "center"
+      },
+      "source": {
+        "kind": "original pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "PumpKey",
+      "role": "Archive hatch key",
+      "path": "Assets/Scripts/Game/PixelArt.cs",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "12x12",
+        "frames": 1,
+        "alpha": true,
+        "filtering": "nearest",
+        "anchor": "center"
+      },
+      "source": {
+        "kind": "original pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
     }
   ]
 }

@@ -45,11 +45,12 @@ namespace DrownedBell.Game
             if (Any(KeyCode.D, KeyCode.RightArrow)) x += 1f;
             float axis = Input.GetAxisRaw("Horizontal");
             if (Mathf.Abs(axis) > 0.4f) x = Mathf.Sign(axis);
+            float vertical = Input.GetAxisRaw("Vertical");
             var input = new PlayerInput
             {
                 MoveX = x,
-                Up = Any(KeyCode.W, KeyCode.UpArrow),
-                Down = Any(KeyCode.S, KeyCode.DownArrow),
+                Up = Any(KeyCode.W, KeyCode.UpArrow) || vertical > 0.5f,
+                Down = Any(KeyCode.S, KeyCode.DownArrow) || vertical < -0.5f,
                 JumpPressed = jump,
                 JumpHeld = JumpHeldNow,
                 DashPressed = dash,

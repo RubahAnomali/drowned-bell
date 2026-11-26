@@ -32,6 +32,7 @@ namespace DrownedBell.Game
             string[] args = Environment.GetCommandLineArgs();
             int i = Array.IndexOf(args, "-autoplay");
             if (i < 0 || i + 1 >= args.Length) return;
+            SaveStore.Enabled = false; // QA never reads or writes the player's save
             Application.runInBackground = true;
             var ap = game.gameObject.AddComponent<AutoPlay>();
             ap.game = game;
@@ -90,7 +91,7 @@ namespace DrownedBell.Game
             var open = new NavGraph(true, game.movement, game.combat);
             report.Add("movement graph: " + closed.Nodes.Count + " spots, built in " + (Time.realtimeSinceStartup - t0).ToString("0.0") + "s");
             pilot = new Autopilot(w, closed, open, retries);
-            game.SetPilot(pilot);
+            game.SetPilot(pilot.Next);
             w.Event += e => OnEvent(w, e);
 
             bool pausedOnce = false, resized = false;
@@ -141,7 +142,50 @@ namespace DrownedBell.Game
                     yield return new WaitForSecondsRealtime(2.5f);
                     yield return Capture("zz_victory_screen");
                     // "Dive again" from the victory screen: a fresh run must start clean.
-                    game.TourDiveAgain();
+                    game.ContinueJourney();
+                    World intake = game.CurrentWorld;
+                    int initialDeaths = intake.Deaths;
+                    float respawnAt = -1f, retrySeconds = -1f;
+                    intake.Event += e =>
+                    {
+                        if (e.Type == GameEventType.Respawned) respawnAt = intake.Time;
+                    };
+                    game.SetPilot(() =>
+                    {
+                        if (intake.Room == intake.Warden.Room && intake.Deaths == initialDeaths)
+                        {
+                            float gap = intake.Warden.Home.X - intake.Player.Body.Pos.X;
+                            return new PlayerInput { MoveX = Mathx.Clamp(gap * 2f, -1, 1) };
+                        }
+                        if (respawnAt >= 0 && retrySeconds < 0 && intake.Warden.Engaged)
+                            retrySeconds = intake.Time - respawnAt;
+                        return SluiceWorks.RouteInput(intake);
+                    });
+                    var seenBeats = new HashSet<string>();
+                    int lastRoom = -1;
+                    float intakeDeadline = Time.realtimeSinceStartup + 180f;
+                    while (intake.Phase != Phase.Victory && Time.realtimeSinceStartup < intakeDeadline)
+                    {
+                        foreach (Enemy foe in intake.Foes)
+                        {
+                            if (!(foe is PumpMachine m) || !m.Alive || m.Room != intake.Room || !m.Engaged) continue;
+                            string name = m.Kind + "_" + m.Beat + (m.SecondPhase ? "_surge" : "");
+                            if (seenBeats.Add(name)) yield return Capture("works_" + name);
+                        }
+                        if (lastRoom != intake.Room)
+                        {
+                            lastRoom = intake.Room;
+                            yield return Capture("sluice_" + lastRoom);
+                        }
+                        yield return null;
+                    }
+                    report.Add("Sluice Works: " + intake.Phase + ", lamp " + intake.LampLit + ", gate " + intake.GrateOpen +
+                        ", total deaths " + intake.Deaths + ", campaign time " + intake.Time.ToString("0.0"));
+                    report.Add($"Pump Warden: retry {retrySeconds:F1}s from lift respawn to engagement, gauge {intake.GaugeFound}, key {intake.PumpKey}, lift {intake.LiftOnline}");
+                    if (retrySeconds < 0 || !intake.GaugeFound || !intake.PumpKey || intake.Warden.Alive) errors.Add("Incomplete Works coverage");
+                    if (intake.Phase != Phase.Victory) { errors.Add("Sluice outlet unreachable"); break; }
+                    yield return Capture("sluice_outlet");
+                    game.ContinueJourney();
                     yield return new WaitForSecondsRealtime(1.5f);
                     World fresh = game.CurrentWorld;
                     report.Add("dive again: new run time " + fresh.Time.ToString("0.0") + "s, deaths " + fresh.Deaths + ", lamp " + fresh.LampLit + ", grate " + fresh.GrateOpen + ", lung " + fresh.LungTaken +

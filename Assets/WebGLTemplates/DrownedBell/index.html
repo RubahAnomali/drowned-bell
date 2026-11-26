@@ -35,6 +35,8 @@
         companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
         productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
         productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+        // Keep the save file (persistentDataPath) in the browser between visits.
+        autoSyncPersistentDataPath: true,
       }, (progress) => {
         document.querySelector("#fill").style.width = 100 * progress + "%";
       }).then(() => {

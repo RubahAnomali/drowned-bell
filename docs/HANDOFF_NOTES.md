@@ -1,5 +1,21 @@
 # Drowned Bell handoff notes
 
+## Save and continue, 27 November 2026 (v0.3)
+
+Step 3 of the campaign plan is done. `Core/SaveGame.cs` holds the versioned key=value save format; `World.Snapshot()` and `World.Restore()` turn a run into a save and back (no positions: Continue wakes at the last lamp or lift with full health; after the Undertoll the save already points at the start of the Sluice Works). `Game/SaveStore.cs` writes `drowned-bell-save.txt` in `Application.persistentDataPath` through a temp file, falls back to it on read, and is switched off by `-autoplay` and `-autoshot`. The title shows Continue (Enter) and New game (N); finishing the Works clears the save. The browser template sets `autoSyncPersistentDataPath`. Headless "Save and continue" checks cover the format, damaged files and both chapters. Next per the plan: Sounding Archive (step 4).
+
+## Full Sluice Works, 27 November 2026
+
+The current Windows package is Builds/Drowned-Bell-Full-Works-Windows-x64.zip. Start in the Belfry and continue after the Undertoll. The Works now includes Impeller Well, the optional Sediment Trap and keeper record, Counterweight Walk, and Duty Pump. PumpMachinery.cs defines the Limpet, Porter and Warden. PumpMachines.png and PumpMachineView.cs provide four poses per actor and geometry-driven attack tells. The Warden drops a key for the eastern archive hatch. Save/Continue, Sounding Archive and Tidal Engine are still planned. See docs/QA_REPORT.md for verification and outstanding hands-on checks.
+
+## Campaign continuation
+
+Start with docs/CAMPAIGN_PLAN.md. The Windows Sluice preview contains ten rooms. The next production rooms are Impeller Well, Sediment Trap, Counterweight Walk and Duty Pump. Build the Piston Limpet, Chain Porter and Pump Warden in that order. The inspection hatch is the temporary endpoint. Local save/continue is planned. Keep earlier work local, and use built-in autoplay for standalone QA. See docs/QA_REPORT.md for current verification.
+
+## Current Windows art build, 27 November 2026
+
+The latest shareable Windows build is Builds/Drowned-Bell-Windows-x64.zip. Extract it and launch Drowned Bell/DrownedBell.exe. The local player is Builds/Release/DrownedBell.exe. It contains the illustrated title and ending, tide lamp, shortcut wheel and twin-chamber Brass Lung. The previous QA and browser builds predate this art pass. Repackage subsequent editor Windows builds with python tools/package_windows.py. Keep all work local unless publication is authorized.
+
 ## Latest acceptance QA
 
 Use the local player at `Builds/QA/DrownedBell.exe` or extract `Builds/DrownedBell-Windows-QA.zip`. The packaged files were verified byte-for-byte against the player. The separate editor-menu build in `Builds/Windows` is older.

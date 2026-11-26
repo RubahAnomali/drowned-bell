@@ -49,8 +49,11 @@ internal static class Program
         Enemies();
         BossFight();
         BossEnding();
+        SluiceChecks();
+        PumpChecks();
         EdgeCases();
         RunState();
+        SaveChecks();
         Route();
         LevelPlanChecks.Run(Ok);
         Pilot();
@@ -60,6 +63,100 @@ internal static class Program
     }
 
     // ---------------------------------------------------------------------------------------------
+    static void SluiceChecks()
+    {
+        var w = new World(level: SluiceWorks.Build());
+        Vec2 vent = w.Level.Vents[0];
+        float start = 4f - vent.X * 0.125f % 4f;
+        foreach (var sample in new[] { (0.5f, VentState.Quiet), (2.5f, VentState.Warning), (3.5f, VentState.Blowing) })
+            Ok(SluiceWorks.VentAt(start + sample.Item1, vent) == sample.Item2, "vent cycle " + sample.Item2);
+        w.Player.Place(vent, w.Move);
+        for (int i = 0; i < 240; i++) w.Update(Dt, default);
+        Ok(w.Player.Health < w.Player.MaxHealth, "standing in the pressure jet costs health");
+        w = new World(level: SluiceWorks.Build());
+        w.Player.Place(w.Level.Outlet.Value, w.Move);
+        w.Update(Dt, default);
+        Ok(w.Phase == Phase.Playing, "outlet requires the valve");
+        w.Respawn();
+        var visited = new HashSet<int>();
+        for (int i = 0; i < 60 * 180 && w.Phase != Phase.Victory; i++)
+        {
+            visited.Add(w.Room);
+            w.Update(Dt, SluiceWorks.RouteInput(w));
+        }
+        Console.WriteLine($"Works run: {w.Phase}, rooms {visited.Count}, feet {w.Player.Body.Feet}, deaths {w.Deaths}, gauge {w.GaugeFound}, Warden {w.Warden.Health}");
+        Ok(visited.Count == 7 && w.LampLit && w.LiftOnline && w.GaugeFound && w.PumpKey && w.GrateOpen && w.Phase == Phase.Victory,
+            "input-only route clears seven Works rooms, keeper record, Warden, pump key and outlet");
+        w.Respawn();
+        Ok(w.GrateOpen && w.Player.Body.Feet.X == w.Level.LiftLamp.Value.X && w.PumpKey, "lift lamp, key and open valve survive respawn");
+    }
+
+    static void PumpChecks()
+    {
+        var w = new World(level: SluiceWorks.Build());
+        foreach (var machine in w.Foes.OfType<PumpMachine>())
+        {
+            w.Player.Place(new Vec2(machine.Home.X - 3, machine.Body.Bottom), w.Move);
+            machine.Reset();
+            bool warned = false, struck = false, recovered = false;
+            for (int i = 0; i < 420; i++)
+            {
+                machine.Update(w, Dt);
+                if (machine.Beat == MachineBeat.Brace)
+                {
+                    warned = true;
+                    if (!machine.IsWarden)
+                        w.Player.Place(new Vec2(machine.Home.X + 2, machine.Body.Bottom), w.Move);
+                }
+                if (machine.Beat == MachineBeat.Strike)
+                    struck |= warned && machine.Facing == -1 && machine.TryAttackBox(out Aabb lane) && lane.MaxX < machine.Home.X;
+                if (machine.Beat == MachineBeat.Recover)
+                {
+                    recovered = !machine.TryAttackBox(out _) && machine.TakeHit(w, 1, 1, machine.Home.X - 2);
+                    break;
+                }
+            }
+            Ok(warned && struck && recovered, machine.Kind + " locks its bearing, strikes on the visible side and permits recovery hits");
+        }
+
+        var boss = w.Warden;
+        boss.Reset();
+        Ok(!boss.TakeHit(w, 2, 1, 0), "Warden casing resists damage outside recovery");
+        boss.Health = boss.MaxHealth / 2;
+        var lanes = new List<int>();
+        MachineBeat previous = boss.Beat;
+        for (int i = 0; i < 420 && boss.Beat != MachineBeat.Recover; i++)
+        {
+            boss.Update(w, Dt);
+            if (boss.Beat == MachineBeat.Jet && boss.Beat != previous) lanes.Add(boss.Lane);
+            previous = boss.Beat;
+        }
+        Ok(lanes.Count == 2 && lanes[0] != lanes[1], "overpressure vents two different lanes before the sweep");
+        w.Respawn();
+        Ok(!boss.Engaged && boss.Health == boss.MaxHealth && !w.Level.DoorsLocked, "an unfinished Warden resets and releases the arena on respawn");
+
+        w = new World(level: SluiceWorks.Build());
+        for (int i = 0; i < 10800 && w.Phase != Phase.Victory; i++)
+            w.Update(Dt, SluiceWorks.RouteInput(w, false));
+        Ok(w.Phase == Phase.Victory && !w.GaugeFound && w.PumpKey, "jumping the drain skips the optional record and still opens the archive hatch");
+
+        w = new World(level: SluiceWorks.Build());
+        w.Player.Place(SluiceWorks.WellStop, w.Move);
+        w.Update(Dt, new PlayerInput { Up = true });
+        Ok(w.BypassOpen && MathF.Abs(w.Player.Body.Feet.X - w.Level.Checkpoint.X) < 0.01f, "opening the bypass at the well rides to the intake");
+        w.Update(Dt, default);
+        w.Update(Dt, new PlayerInput { Up = true });
+        Ok(MathF.Abs(w.Player.Body.Feet.X - SluiceWorks.WellStop.X) < 0.01f, "the intake bypass returns to the well");
+
+        w = new World(level: SluiceWorks.Build());
+        w.Player.Place(w.Level.LiftLamp.Value, w.Move);
+        w.Update(Dt, new PlayerInput { Up = true });
+        w.Update(Dt, default);
+        w.Update(Dt, new PlayerInput { Up = true });
+        Ok(w.LiftOnline && MathF.Abs(w.Player.Body.Feet.X - w.Level.LiftLamp.Value.X) < 0.01f,
+            "late lift returns to the checkpoint even when the well bypass was skipped");
+    }
+
     static float JumpPeak(Level lv, float holdFor)
     {
         var p = new Player(new Vec2(14.5f, 1f), M, 5);
@@ -537,7 +634,7 @@ internal static class Program
         for (int i = 0; i < 600 && w.Boss.State != BossState.Idle; i++) w.Update(Dt, default); // the intro is invulnerable by design
         w.Boss.TakeHit(w, 424242, 999);
         Step(w, World.VictoryDelay + 0.3f);
-        Ok(w.Phase == Phase.Victory, "however the bell falls, the run ends with the victory screen");
+        Ok(w.Phase == Phase.Victory, "however the bell falls, the belfry chapter reaches its interlude");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -573,6 +670,79 @@ internal static class Program
         Ok(crab.Alive && crab.Health == crab.MaxHealth, "ordinary enemies are back");
         Ok(w.Boss.State == BossState.Dormant && w.Boss.Health == w.Boss.MaxHealth && !w.Level.DoorsLocked, "the boss resets and the arena door is open again");
         Ok(w.GrateOpen && w.LungTaken && w.Player.MaxHealth == C.MaxHealth + 1, "the opened shortcut and the extra mask stay for the rest of the run");
+        Teleport(w, arena.MinX + 8.5f, arena.MinY + 6f);
+        w.Player.Invuln = 999f;
+        for (int i = 0; i < 600 && w.Boss.State != BossState.Idle; i++) w.Update(Dt, default);
+        w.Boss.TakeHit(w, 9003, 999);
+        Step(w, World.VictoryDelay + 0.3f);
+        var intake = w.EnterSluice();
+        Ok(intake.LungTaken && intake.Player.MaxHealth == C.MaxHealth + 1 && intake.Time == w.Time && intake.Deaths == 1,
+            "chapter transition carries the Brass Lung, time and deaths");
+        Ok(!intake.GrateOpen && !intake.LampLit && intake.Phase == Phase.Playing, "Sluice Works starts with its own lamp and valve");
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    static SaveData ThroughFile(SaveData s) => SaveData.Parse(s.Serialize());
+
+    static void SaveChecks()
+    {
+        Section("Save and continue");
+        var full = new SaveData { Chapter = Chapter.Sluice, Time = 1234.5678f, Deaths = 7, Lung = true, Lamp = true, Gate = true, Gauge = true, Bypass = true, Lift = true, Key = true, WardenDown = true };
+        SaveData back = ThroughFile(full);
+        Ok(back != null && back.Serialize() == full.Serialize() && back.Time == full.Time, "a save reads back exactly as written");
+        string text = full.Serialize();
+        Ok(SaveData.Parse(text.Substring(0, text.IndexOf("end="))) == null, "a file cut off mid-write is ignored");
+        Ok(SaveData.Parse(text.Replace("version=1", "version=99")) == null, "a save from another version is ignored");
+        Ok(SaveData.Parse(text.Replace("deaths=7", "deaths=seven")) == null && SaveData.Parse(text.Replace("chapter=Sluice", "chapter=Moon")) == null,
+            "a damaged value is ignored instead of crashing");
+        Ok(SaveData.Parse("") == null && SaveData.Parse("garbage\n=\n==") == null && SaveData.Parse(new SaveData { Time = 2f }.Serialize().Replace("time=2", "time=NaN")) == null,
+            "empty or nonsense files are ignored");
+        Ok(SaveData.Parse(text.Replace("\n", "\r\n")) != null, "Windows line endings still read");
+
+        // Belfry: lamp, Brass Lung and the winch survive a quit and continue.
+        var w = new World();
+        Teleport(w, w.Level.Checkpoint.X, w.Level.Checkpoint.Y + 1f);
+        w.Player.Place(new Vec2(w.Level.Heart.X, w.Level.Heart.Y), w.Move);
+        w.Update(Dt, default);
+        w.Player.Place(new Vec2(w.Level.Lever.X - 1.2f, w.Level.Lever.Y), w.Move);
+        w.Player.Facing = 1;
+        w.Update(Dt, new PlayerInput { AttackPressed = true });
+        Step(w, 0.3f);
+        var c = World.Restore(ThroughFile(w.Snapshot()));
+        Ok(c.Chapter == Chapter.Belfry && c.LampLit && c.GrateOpen && c.LungTaken && c.Player.MaxHealth == C.MaxHealth + 1 && c.Player.Health == c.Player.MaxHealth,
+            "Belfry continue keeps the lamp, open grate and Brass Lung, at full health");
+        Ok(Vec2.Distance(c.Player.Body.Feet, w.Level.Checkpoint) < 0.1f && c.Room == c.Level.RoomIndexAt(c.Player.Body.Pos) && MathF.Abs(c.Time - w.Time) < 1e-4f,
+            "and wakes at the tide lamp with the same play time");
+        Ok(World.Restore(new SaveData()).Player.Body.Feet.X == new World().Player.Body.Feet.X, "a save made before the lamp starts at the beginning");
+
+        // Beating the Undertoll saves the start of the next chapter.
+        RoomInfo arena = w.Level.Rooms[w.ArenaRoom];
+        Teleport(w, arena.MinX + 8.5f, arena.MinY + 6f);
+        w.Player.Invuln = 999f;
+        for (int i = 0; i < 600 && w.Boss.State != BossState.Idle; i++) w.Update(Dt, default);
+        w.Boss.TakeHit(w, 9101, 999);
+        SaveData atClear = ThroughFile(w.Snapshot());
+        var works = World.Restore(atClear);
+        Ok(atClear.Chapter == Chapter.Sluice && works.Chapter == Chapter.Sluice && !works.LampLit && !works.GrateOpen && works.LungTaken,
+            "a save after the Undertoll continues at the start of the Sluice Works with the Brass Lung");
+        Ok(Vec2.Distance(works.Player.Body.Feet, works.Level.PlayerStart) < 0.1f, "at the Works entrance");
+
+        // Sluice: snapshot just after the pump key, continue, and finish the chapter from there.
+        var s = new World(level: SluiceWorks.Build());
+        SaveData afterKey = null;
+        for (int i = 0; i < 60 * 180 && afterKey == null; i++)
+        {
+            s.Update(Dt, SluiceWorks.RouteInput(s));
+            if (s.PumpKey) afterKey = ThroughFile(s.Snapshot());
+        }
+        Ok(afterKey != null && afterKey.Key && afterKey.WardenDown && afterKey.Lift && afterKey.Lamp && afterKey.Gate, "the pump key saves the lift, valve, Warden and key");
+        var r = World.Restore(afterKey);
+        Ok(!r.Warden.Alive && r.PumpKey && r.LiftOnline && r.GrateOpen && r.GaugeFound == s.GaugeFound, "Sluice continue restores every opened station");
+        Ok(Vec2.Distance(r.Player.Body.Feet, r.Level.LiftLamp.Value) < 0.1f, "and wakes at the counterweight lift");
+        r.Respawn();
+        Ok(!r.Warden.Alive, "a beaten Warden stays down after a death");
+        for (int i = 0; i < 60 * 120 && r.Phase != Phase.Victory; i++) r.Update(Dt, SluiceWorks.RouteInput(r));
+        Ok(r.Phase == Phase.Victory, "a continued run can still reach the archive hatch");
     }
 
     // ---------------------------------------------------------------------------------------------

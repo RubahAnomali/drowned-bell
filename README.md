@@ -1,15 +1,15 @@
 # Drowned Bell
 
-A short 2D side-scrolling action demo in Unity. A small salvage diver climbs down a flooded bell tower to silence **the Undertoll**, the great bell whose tolling keeps drowning the lower halls. Responsive movement, close-range hook combat, readable enemy tells, one compact interconnected area and a boss.
+A short 2D side-scrolling action demo in Unity. A small salvage diver climbs down a flooded bell tower to silence **the Undertoll**, the great bell whose tolling keeps drowning the lower halls. Responsive movement, close-range hook combat, readable enemy tells, two seven-room chapters and two bosses. The full four-area design is in [the campaign plan](docs/CAMPAIGN_PLAN.md).
 
-Original pixel art, synthesized sound and room layouts are authored in code. The game renders at 512×288 and scales to the window with nearest-neighbor filtering.
+The diver, enemies, landmarks and room tiles use original code-authored pixel art. The title and ending share a 24-color belfry illustration. Sound is synthesized in code. The game renders at 512×288 and scales to the window with nearest-neighbor filtering.
 
 **Versions:** `main` is the current version; each finished version is kept on its own branch (`v0.1`, `v0.2`, ...). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Play
 
-- **Latest tested Windows build:** `Builds/QA/DrownedBell.exe` (windowed 1600x900, resizable). The `Builds/` folder is not in git; the editor command **Drowned Bell > Build Windows** writes a separate build to `Builds/Windows/`.
-- **In the browser:** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
+- **Windows download:** extract `Builds/Drowned-Bell-Full-Works-Windows-x64.zip` and open `Drowned Bell/DrownedBell.exe`. The folder includes the Unity runtime and a short controls guide. The unpackaged release player is `Builds/DutyPump/DrownedBell.exe`. For a new download, use **Drowned Bell > Build Windows** in Unity and then run `python tools/package_windows.py --output Builds/Drowned-Bell-Full-Works-Windows-x64.zip` from the project root.
+- **Earlier Belfry-only browser edition:** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
 - **In the editor:** Unity 6.6 (6000.6.10f1). Open `Assets/Scenes/Main.unity` and press Play. Any other scene also works, because `Bootstrap` creates the game if the scene has none.
 
 | Action | Keys |
@@ -18,6 +18,7 @@ Original pixel art, synthesized sound and room layouts are authored in code. The
 | Jump (hold for higher) | Space or Z |
 | Swing the hook | X or J. Hold W to swing up, hold S in the air to swing down. Left-click to aim with the mouse |
 | Dash | C, Left Shift or K. Right-click to dash toward the cursor |
+| Continue or new game | Title screen: Enter or click continues your saved run, N starts a new game |
 | Pause | Esc |
 | Mute | M |
 | Inspector (hitboxes, states) | F1 or I (I in the browser) |
@@ -26,6 +27,8 @@ Original pixel art, synthesized sound and room layouts are authored in code. The
 | Quit (title, pause, ending) | Q (Windows build only) |
 
 A down-swing in the air bounces off enemies and spikes (pogo) and gives back the air dash. When the bell rises for a slam, you can run underneath it to the open side.
+
+Progress saves itself at lamps and the lift, pickups, opened shortcuts, boss clears and every respawn. Continue wakes you at the last lamp or lift with full health. One save slot: `drowned-bell-save.txt` in Unity's persistent data folder (on Windows, `%USERPROFILE%\AppData\LocalLow\RubahAnomali\Drowned Bell`; in the browser, the site's local storage). Reaching the end of the current build clears it. QA runs (`-autoplay`, `-autoshot`) never read or write it.
 
 ## The route
 
@@ -80,7 +83,7 @@ The boss chooses deterministically: it rushes when you are far, slams when you a
 - Five masks of health, six with the Brass Lung. A swing can only damage a given enemy once. After a hit you are invulnerable for 1.1 s and knocked away.
 - **Spikes** cost a mask and put you back on the last safe ground.
 - **Death** returns you to the lit tide lamp at full health. Ordinary enemies and an unfinished boss fight reset. **The opened grate, the lit lamp and the Brass Lung stay** for the rest of the run.
-- Beating the bell ends the run with your time and death count.
+- Beating the bell opens the Sluice Works interlude. Press Enter or click to continue with the same upgrade, elapsed time and death count. A new lamp marks the start of the Works. Follow the pressure main through Intake Dock, Bleeder Gallery and Valve Hall. Strike the wheel to enter Impeller Well. Jump the drain for the direct route or drop to Sediment Trap for the keeper record. W or Up rides the maintenance lift. Beyond Counterweight Walk, evade the Pump Warden’s marked relief pipe and piston sweep. Strike its open brass housing during retraction. Pick up its key and walk to the eastern hatch to finish chapter two. Progress lasts one session.
 
 ## Tuning
 

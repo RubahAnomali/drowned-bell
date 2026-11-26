@@ -33,6 +33,10 @@ namespace DrownedBell.Core
         public bool GrateOpen;
         public bool DoorsLocked;
         public Vec2 PlayerStart, Checkpoint, Lever, Heart, BossSpawn;
+        public Vec2? Record, LiftLamp;
+        public Vec2? Outlet { get; private set; }
+        public bool HasHeart { get; private set; }
+        public readonly List<Vec2> Vents = new List<Vec2>();
         public bool HasBoss { get; private set; }
         public readonly List<Spawn> Spawns = new List<Spawn>();
         public readonly List<Vec2> Landmarks = new List<Vec2>();
@@ -81,10 +85,17 @@ namespace DrownedBell.Core
                         case 'P': lv.PlayerStart = at; break;
                         case 'C': lv.Checkpoint = at; break;
                         case 'L': lv.Lever = at; break;
-                        case 'H': lv.Heart = at; break;
+                        case 'H': lv.Heart = at; lv.HasHeart = true; break;
+                        case 'R': lv.Record = at; break;
+                        case 'A': lv.LiftLamp = at; break;
+                        case 'V': lv.Vents.Add(at); break;
+                        case 'E': lv.Outlet = at; break;
                         case 'B': lv.BossSpawn = at; lv.HasBoss = true; break;
                         case 'b': lv.Landmarks.Add(at); break;
                         case 'a': lv.ArchLamps.Add(at); break;
+                        case 'p':
+                        case 'k':
+                        case 'M':
                         case 'c':
                         case 'j':
                         case 'T':

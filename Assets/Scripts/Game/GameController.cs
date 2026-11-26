@@ -30,12 +30,14 @@ namespace DrownedBell.Game
         PlayerView playerView;
         readonly List<CrabView> crabs = new List<CrabView>();
         readonly List<JellyView> jellies = new List<JellyView>();
+        readonly List<PumpMachineView> machines = new List<PumpMachineView>();
         BossView bossView;
         Fx fx;
         AudioSynth audioSynth;
         readonly GameInput input = new GameInput();
         Camera cam;
         RenderTexture pixelFrame;
+        Texture2D belfry;
         const int PixelWidth = 512, PixelHeight = 288;
         Flow flow = Flow.Title;
         float acc, hitStop, shake, fade, bannerTime, stepClock, lookX;
@@ -56,6 +58,7 @@ namespace DrownedBell.Game
 
         void Awake()
         {
+            belfry = Resources.Load<Texture2D>("Belfry");
             cam = Camera.main;
             if (cam == null)
             {
@@ -94,6 +97,33 @@ namespace DrownedBell.Game
                 NewRun();
             AutoTour.AttachIfRequested(this);
             if (testTarget == null) AutoPlay.AttachIfRequested(this);
+            save = SaveStore.Load();
+        }
+
+        // ---- save and continue -----------------------------------------------------------------
+
+        /// <summary>The save on disk, shown on the title as Continue. Null when there is none.</summary>
+        SaveData save;
+
+        void Save()
+        {
+            if (automatedTour || pilot != null || testTarget != null) return;
+            save = world.Snapshot();
+            SaveStore.Write(save);
+        }
+
+        void ContinueSaved()
+        {
+            NewRun(continuation: World.Restore(save, movement, combat, enemies, boss));
+            BeginDive();
+        }
+
+        void StartNewGame()
+        {
+            SaveStore.Clear();
+            save = null;
+            NewRun();
+            BeginDive();
         }
 
         void OnDestroy()
@@ -130,29 +160,32 @@ namespace DrownedBell.Game
             audioSynth.Start();
         }
         /// <summary>QA autoplay: take each step's input from the autopilot instead of the keyboard.</summary>
-        public void SetPilot(Autopilot p) { pilot = p; }
-        Autopilot pilot;
+        public void SetPilot(System.Func<PlayerInput> p) { pilot = p; }
+        System.Func<PlayerInput> pilot;
 
-        void NewRun(bool testRoom = false)
+        void NewRun(bool testRoom = false, World continuation = null)
         {
-            audioSynth.ResetRun();
+            pilot = null;
+            if (continuation == null) audioSynth.ResetRun();
             if (worldRoot != null) Destroy(worldRoot.gameObject);
             worldRoot = new GameObject("World").transform;
-            world = new World(movement, combat, enemies, boss, testRoom ? TestRoom.Build() : null);
+            world = continuation ?? new World(movement, combat, enemies, boss, testRoom ? TestRoom.Build() : null);
             world.Event += OnEvent;
             levelView = new LevelView(world, worldRoot);
             crabs.Clear();
+            machines.Clear();
             jellies.Clear();
             testTarget = null;
             measuringJump = measuringDash = false;
             lastJump = lastDash = "";
             foreach (Enemy e in world.Foes)
             {
-                if (e is Crab c) crabs.Add(new CrabView(c, worldRoot));
+                if (e is PumpMachine m) machines.Add(new PumpMachineView(m, worldRoot));
+                else if (e is Crab c) crabs.Add(new CrabView(c, worldRoot));
                 else if (e is Jelly j) jellies.Add(new JellyView(j, enemies, worldRoot));
                 else if (e is Dummy target) testTarget = target;
             }
-            bossView = testRoom ? null : new BossView(world.Boss, boss, worldRoot, world.Level.FloorBelow(world.Level.BossSpawn.X, world.Level.BossSpawn.Y + 0.5f));
+            bossView = !world.Level.HasBoss ? null : new BossView(world.Boss, boss, worldRoot, world.Level.FloorBelow(world.Level.BossSpawn.X, world.Level.BossSpawn.Y + 0.5f));
             if (testRoom) testMetrics = Metrics.Measure(movement, combat);
             playerView = new PlayerView(world, worldRoot);
             fx = new Fx(worldRoot);
@@ -168,6 +201,23 @@ namespace DrownedBell.Game
 
         void OnEvent(GameEvent e)
         {
+            switch (e.Type)
+            {
+                // Save points: lamps and lifts, pickups, opened shortcuts, boss clears, and every respawn.
+                case GameEventType.LampLit: case GameEventType.Rested: case GameEventType.LungTaken: case GameEventType.WinchPulled:
+                case GameEventType.GaugeFound: case GameEventType.LiftOnline: case GameEventType.BypassOnline: case GameEventType.PumpKeyTaken:
+                case GameEventType.BossDefeated: case GameEventType.Respawned:
+                    Save();
+                    break;
+                case GameEventType.EnemyKilled:
+                    if (world.Warden != null && !world.Warden.Alive) Save();
+                    break;
+                case GameEventType.Victory:
+                    // The end of the current build: the next dive starts fresh, so there is nothing to continue.
+                    if (world.Chapter == Chapter.Sluice && !automatedTour) { SaveStore.Clear(); save = null; }
+                    else Save();
+                    break;
+            }
             if (testTarget != null) TrackTestMove(e.Type);
             audioSynth.OnEvent(e);
             Vector2 p = new Vector2(e.Pos.X, e.Pos.Y);
@@ -193,8 +243,13 @@ namespace DrownedBell.Game
                 case GameEventType.Rested: fx.Burst(new Vector2(p.x, p.y + 1.7f), Palette.Warm, 8, 2f, 0.08f, -1f); break;
                 case GameEventType.WinchPulled:
                     Impact(p, Palette.Warm, 0.34f, 10);
-                    Banner("The winch turns", "Far above, a grate grinds open.");
+                    Banner("The winch turns", world.Level.Outlet.HasValue ? "The inspection gate is open. Follow the pipe east." : "Far above, a grate grinds open.");
                     break;
+                case GameEventType.BypassOnline: Banner("Intake bypass", "Up rides between the well and intake lamp."); break;
+                case GameEventType.GaugeFound: Banner("Keeper record", "The gauge plate bears the night shift's names."); break;
+                case GameEventType.LiftOnline: Banner("Counterweight lift", "Checkpoint lit. Up rides the lift to the intake."); break;
+                case GameEventType.PumpKeyTaken: Banner("Pump key", "The archive hatch is east of the duty pump."); break;
+                case GameEventType.PumpSurge: Banner("Overpressure", "Two pipes vent in sequence."); break;
                 case GameEventType.LungTaken:
                     fx.Ring(p, Palette.Warm, 2.5f, 0.6f);
                     Banner("Brass Lung", "One more breath. Your health grows by one mask.");
@@ -258,7 +313,7 @@ namespace DrownedBell.Game
             if (room < 0 || roomSeen == null || roomSeen[room]) return;
             roomSeen[room] = true;
             string name = world.Level.Rooms[room].Name;
-            Banner(name, name == "Ripple Walk" ? "When the bell rings, jump the floor ripple." : "");
+            Banner(name, world.Level.Outlet.HasValue ? world.Level.Rooms[room].Purpose : name == "Ripple Walk" ? "When the bell rings, jump the floor ripple." : "");
         }
 
         // ---- loop -----------------------------------------------------------------------------
@@ -270,7 +325,17 @@ namespace DrownedBell.Game
         }
 
         /// <summary>The same code path as pressing Enter on the victory screen.</summary>
-        public void TourDiveAgain() { NewRun(); flow = Flow.Playing; }
+        internal void ContinueJourney()
+        {
+            if (flow != Flow.Victory) return;
+            if (world.Level.HasBoss)
+            {
+                NewRun(continuation: world.EnterSluice());
+                Save();
+            }
+            else NewRun();
+            flow = Flow.Playing;
+        }
 
         void Update()
         {
@@ -285,7 +350,8 @@ namespace DrownedBell.Game
             {
                 case Flow.Title:
                     if (Input.GetKeyDown(KeyCode.T)) BeginTestRoom();
-                    else if (GameInput.ConfirmOrClick) BeginDive();
+                    else if (save != null && Input.GetKeyDown(KeyCode.N)) StartNewGame();
+                    else if (GameInput.ConfirmOrClick) { if (save != null) ContinueSaved(); else BeginDive(); }
                     break;
                 case Flow.Paused:
                     if (GameInput.CycleShake)
@@ -302,7 +368,7 @@ namespace DrownedBell.Game
                     else if (GameInput.Pause || GameInput.ConfirmOrClick) { flow = Flow.Playing; input.Clear(); }
                     break;
                 case Flow.Victory:
-                    if (GameInput.ConfirmOrClick) { NewRun(); flow = Flow.Playing; input.Clear(); }
+                    if (GameInput.ConfirmOrClick) ContinueJourney();
                     break;
                 case Flow.Playing:
                     if (GameInput.Pause) { flow = Flow.Paused; break; }
@@ -321,7 +387,7 @@ namespace DrownedBell.Game
             while (acc >= World.FixedDt && steps < 5)
             {
                 PlayerInput step = input.Take(cam, new Vector2(world.Player.Body.Pos.X, world.Player.Body.Pos.Y), DisplayRect());
-                if (pilot != null) step = pilot.Next();
+                if (pilot != null) step = pilot();
                 previousFeet = world.Player.Body.Feet;
                 world.Update(World.FixedDt, step);
                 if (measuringJump) jumpRise = Mathf.Max(jumpRise, world.Player.Body.Feet.Y - takeoff.Y);
@@ -359,6 +425,7 @@ namespace DrownedBell.Game
             playerView.Tick(dt, dying, reducedFlashing);
             foreach (CrabView c in crabs) c.Tick(dt, reducedFlashing);
             foreach (JellyView j in jellies) j.Tick(dt, reducedFlashing);
+            foreach (var machine in machines) machine.Tick(reducedFlashing);
             bossView?.Tick(dt, reducedFlashing);
             fx.Tick(flow == Flow.Paused ? 0f : dt);
 
@@ -460,12 +527,14 @@ namespace DrownedBell.Game
 
                 // Boss bar
                 Boss bs = world.Boss;
-                if (bs.Awake && !bs.Dead && world.Room == world.ArenaRoom)
+                PumpMachine pump = world.Warden;
+                bool pumping = pump != null && pump.Engaged && pump.Alive && pump.Room == world.Room;
+                if (pumping || (bs.Awake && !bs.Dead && world.Room == world.ArenaRoom))
                 {
                     float bw = w * 0.4f, bx = (w - bw) * 0.5f, by = 7.5f * u;
-                    Label(new Rect(0, by - 4.6f * u, w, 4 * u), "THE UNDERTOLL", mid, Palette.Text);
+                    Label(new Rect(0, by - 4.6f * u, w, 4 * u), pumping ? "PUMP WARDEN" : "THE UNDERTOLL", mid, Palette.Text);
                     Box(new Rect(bx - 2, by - 2, bw + 4, 1.6f * u + 4), new Color(0, 0, 0, 0.6f));
-                    Box(new Rect(bx, by, bw * bs.Health / bs.MaxHealth, 1.6f * u), Palette.BellRim);
+                    Box(new Rect(bx, by, bw * (pumping ? (float)pump.Health / pump.MaxHealth : (float)bs.Health / bs.MaxHealth), 1.6f * u), Palette.BellRim);
                 }
 
                 // Banner: room names and story beats, fading in and out.
@@ -480,10 +549,7 @@ namespace DrownedBell.Game
             switch (flow)
             {
                 case Flow.Title:
-                    Overlay("DROWNED BELL", "A salvage diver climbs down a flooded bell tower to silence the bell that keeps drowning the halls.",
-                        "Move A / D    Jump Space    Swing X / J    Dash Shift\n" +
-                        "Aim W / S    Left click swings    Right click dashes\n" +
-                        "Esc pause    M mute    " + (GameInput.Web ? "I" : "F1") + " inspector\n\nEnter or click to dive    T test room" + (GameInput.Web ? "" : "    Q quit"));
+                    DrawBookend(false);
                     break;
                 case Flow.Paused:
                     Overlay("PAUSED", "Esc, Enter or click to resume." + (GameInput.Web ? "" : "   Q to quit."),
@@ -491,12 +557,34 @@ namespace DrownedBell.Game
                         $"1 camera shake {shakeStrength:P0}   2 reduced flashing {(reducedFlashing ? "on" : "off")}");
                     break;
                 case Flow.Victory:
-                    Overlay("THE BELL IS SILENT", "The water stills. The lower halls will drain by morning.",
-                        "Time " + FormatTime(world.Time) + "        Deaths " + world.Deaths + "        Brass Lung " + (world.LungTaken ? "found" : "missed") + "\n\nPress Enter or click to dive again" + (GameInput.Web ? "" : "          Q to quit"));
+                    DrawBookend(true);
                     break;
             }
 
             if (debug) DrawDebug(w, h, u);
+        }
+
+        void DrawBookend(bool victory)
+        {
+            Box(new Rect(0, 0, PixelWidth, PixelHeight), Palette.SkyBottom);
+            GUI.DrawTexture(new Rect(320, 0, 192, 288), belfry);
+            Box(new Rect(319, 0, 1, 288), Palette.RockSide);
+            bool outlet = world.Level.Outlet.HasValue;
+            const int x = 22, width = 280;
+            Label(new Rect(x, 35, width, 60), victory ? (outlet ? "PUMP\nSILENCED" : "THE BELL IS\nSILENT") : "DROWNED\nBELL", -3, Palette.Warm);
+            Label(new Rect(x, 109, width, 34), victory
+                ? (outlet ? "The pumps fall quiet. The key opens the Sounding Archive. End of the current build." : "Below the silent bell, an intake has opened. The pumps are still running.")
+                : "A salvage diver descends a flooded tower to silence the bell that keeps drowning the halls.", small, Palette.Text);
+            Box(new Rect(x, 151, 32, 1), Palette.WarmDeep);
+            string details = victory
+                ? "Time   " + FormatTime(world.Time) + "\nDeaths   " + world.Deaths + "\nBrass Lung   " + (world.LungTaken ? "found" : "missed")
+                : "A/D move    Space jump    Shift dash\nX/J swing   W/S aim\nLeft click swing    Right click dash\nEsc pause   M mute   " + (GameInput.Web ? "I" : "F1") + " inspector";
+            if (victory && outlet) details += "\nKeeper record   " + (world.GaugeFound ? "found" : "missed");
+            Label(new Rect(x, 169, width, 48), details, small, Palette.TextDim);
+            bool resume = !victory && save != null;
+            Label(new Rect(x, 231, width, 12), victory ? (outlet ? "Enter or click to dive again" : "Enter or click to enter the Sluice Works") : resume ? "Enter or click to continue" : "Enter or click to dive", small, Palette.Warm);
+            if (resume) Label(new Rect(x, 242, width, 12), "Saved   " + save.Summary(), small, Palette.Text);
+            Label(new Rect(x, resume ? 260 : 252, width, 12), (resume ? "N new game    " : "") + (victory ? "" : "T test room    ") + (GameInput.Web ? "" : "Q quit"), small, Palette.TextDim);
         }
 
         void Overlay(string title, string sub, string body)
@@ -549,7 +637,7 @@ namespace DrownedBell.Game
                 "hp " + p.Health + "/" + p.MaxHealth + "   invuln " + p.Invuln.ToString("0.00") + "   stun " + p.Stun.ToString("0.00") + "   swing " + (p.Attacking ? p.Attack + " " + p.AttackTime.ToString("0.00") : "-"),
             };
             foreach (Enemy e in world.Foes)
-                if (e.Room == world.Room) lines.Add((e.Kind == EnemyKind.Crab ? "crab " : "jelly ") + e.Id + "  " + (e.Alive ? e.StateName + "  hp " + e.Health : "dead") + "  rejected " + e.RejectedTransitions);
+                if (e.Room == world.Room) lines.Add(e.Kind.ToString() + " " + e.Id + "  " + (e.Alive ? e.StateName + "  hp " + e.Health : "dead") + "  rejected " + e.RejectedTransitions);
             if (world.Room == world.ArenaRoom)
                 lines.Add("undertoll " + world.Boss.State + "  hp " + world.Boss.Health + "/" + world.Boss.MaxHealth + "  phase " + (world.Boss.Phase2 ? 2 : 1) + "  attacks " + world.Boss.AttackCount + "  waves " + world.Boss.Waves.Count + "  drips " + world.Boss.Drips.Count);
             lines.Add("cyan diver, white swing, yellow harmful body, green safe body, red live attack");

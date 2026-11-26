@@ -68,6 +68,12 @@ namespace DrownedBell.Game
             clips[GameEventType.BossDefeated] = Bell("silence", 5f, 65f, 0.75f);
             clips[GameEventType.Victory] = Chord("victory", 3f, new[] { 262f, 330f, 392f, 523f, 659f }, 0.22f);
             distantToll = Bell("distant", 4f, 87f, 0.16f);
+            clips[GameEventType.MachineBrace] = Clicks("ratchet", 0.65f, 4, 0.18f);
+            clips[GameEventType.PipeWarning] = Sweep("whistle", 0.80f, 390f, 710f, 0.12f);
+            clips[GameEventType.PumpSurge] = Noise("pressure relief", 0.75f, 0.32f, 790f);
+            clips[GameEventType.PumpKeyTaken] = clips[GameEventType.LungTaken];
+            clips[GameEventType.GaugeFound] = clips[GameEventType.Rested];
+            clips[GameEventType.LiftOnline] = clips[GameEventType.LampLit];
             step = Noise("step", 0.05f, 0.08f, 900f);
         }
 

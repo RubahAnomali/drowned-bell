@@ -5,6 +5,16 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.3 (Sluice Works and save/continue)
+
+- Chapter II, the Sluice Works: seven rooms after the Undertoll (Intake Dock, Bleeder Gallery, Valve Hall,
+  Impeller Well, Sediment Trap, Counterweight Walk, Duty Pump) with pressure vents, a valve gate, a bypass,
+  a counterweight lift checkpoint, an optional keeper record and the pump key.
+- New enemies: Piston Limpet and Chain Porter, and the Pump Warden boss.
+- Illustrated title and ending screens.
+- Save and continue: one save slot, written at lamps, the lift, pickups, opened shortcuts, boss clears
+  and respawns. The title offers Continue (Enter) or a new game (N). The browser edition keeps the save too.
+
 ## v0.2 (playable in the browser)
 
 - Web build (Unity WebGL) with its own full-window page, hosted on the portfolio site.

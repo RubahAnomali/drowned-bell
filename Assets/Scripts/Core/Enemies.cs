@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DrownedBell.Core
 {
-    public enum EnemyKind { Crab, Jelly, Dummy }
+    public enum EnemyKind { Crab, Jelly, Dummy, Limpet, Porter, Warden }
 
     public abstract class Enemy
     {
@@ -49,7 +49,7 @@ namespace DrownedBell.Core
         }
 
         /// <summary>A swing can only ever damage an enemy once. Returns true when this swing is new.</summary>
-        public bool TakeHit(World w, int swingId, int damage, float fromX)
+        public virtual bool TakeHit(World w, int swingId, int damage, float fromX)
         {
             if (!Alive || swingId == lastSwing) return false;
             lastSwing = swingId;

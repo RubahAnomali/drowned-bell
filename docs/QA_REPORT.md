@@ -1,5 +1,17 @@
 # Drowned Bell QA report
 
+## Save and continue (v0.3), 27 November 2026
+
+All headless checks passed, including 16 new "Save and continue" checks: exact read-back; files cut off mid-write, other versions, damaged values and nonsense files are ignored; Windows line endings still read; a Belfry save keeps the lamp, grate and Brass Lung and wakes at the lamp; a save after the Undertoll continues at the Works entrance; a save after the pump key restores every station, wakes at the lift, keeps the Warden down after a death and can still reach the archive hatch. Unity built Windows and WebGL with 0 errors and 0 warnings. The Windows bot played both chapters to the archive hatch (one planned death per boss) with zero runtime errors and wrote no save file. In the browser build: lighting the lamp saved, a page reload showed Continue with "Drowned Belfry 0:01", Continue woke the diver at the lit lamp, N started a fresh run and a later reload showed no save. No console errors. Not checked by hand: Continue on Windows after a real quit, and a save made inside the Sluice Works in a real build (covered only by the headless checks).
+
+## Sluice Works campaign preview, 27 November 2026
+
+106 headless checks passed, including pressure timing and damage, valve gating, checkpoint and upgrade persistence, and the input-only intake route. Unity built the Windows x64 player. The standalone pilot launched from a fresh ZIP extraction, cleared the Undertoll at 122.0 seconds, entered all three Sluice rooms, opened the valve, reached the outlet at 134.8 seconds of cumulative game time and restarted cleanly with zero runtime errors. The first victory line in docs/qa-sluice-standalone.txt times the Belfry only; the Sluice Works line gives the cumulative time. Human pacing, physical controls and another PC remain unverified. The public browser build predates this preview.
+
+## Windows art release, 27 November 2026
+
+Unity built the Windows x64 player, and all 97 headless checks passed. The built-in pilot played a clean extraction through one ending and clean restart in 147.7 seconds of game time, with one deliberate boss death, a 5.4-second respawn-to-arena return and zero runtime errors. Pause froze the game and the 1280 by 720 resize worked. All 156 final archive entries matched the tested extraction. Raw results are in docs/qa-windows-art-release.txt. Hands-on controls, first-time human pacing, and compatibility on a second Windows PC remain unverified. The release ZIP is local and the public browser build was not updated.
+
 ## Current release candidate — 26 November 2026
 
 **Needs verification.** Both fresh standalone processes reached the ending exactly once, with zero runtime errors. The input-only pilot collected the lamp and Brass Lung, struck the winch, climbed its shortcut, and fought the Undertoll. Restart restored a clean world. First-time human navigation and hands-on controls remain essential acceptance checks.

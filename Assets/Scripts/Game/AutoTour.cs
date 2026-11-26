@@ -21,6 +21,7 @@ namespace DrownedBell.Game
             string[] args = Environment.GetCommandLineArgs();
             int i = Array.IndexOf(args, "-autoshot");
             if (i < 0 || i + 1 >= args.Length) return;
+            SaveStore.Enabled = false; // QA never reads or writes the player's save
             Application.runInBackground = true;
             var tour = game.gameObject.AddComponent<AutoTour>();
             tour.game = game;

@@ -1,0 +1,10 @@
+DROWNED BELL
+Windows x64
+
+Extract the entire ZIP, then open DrownedBell.exe. Keep the folders beside the game.
+
+Enter or click to begin. A/D or arrows move, Space jumps, Shift dashes.
+X or J swings the hook. W aims upward. S aims down in the air.
+Left-click swings toward the cursor. Right-click dashes. Esc pauses.
+While paused, 1 adjusts shake and 2 toggles reduced flashing. M mutes audio.
+After the Undertoll falls, press Enter or click to descend to the Sluice Works. In the Works, Up rides the lift. Jump the well drain to skip the optional keeper record, or descend to collect it. Defeat the Pump Warden, collect its key and reach the archive hatch. Progress lasts for this session.

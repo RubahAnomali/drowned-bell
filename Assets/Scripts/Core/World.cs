@@ -13,7 +13,7 @@ namespace DrownedBell.Core
         CrabWindup, CrabLunge, JellyWindup, JellyPulse,
         RippleWindup, RippleToll,
         BossAwake, BossSlamWindup, BossSlam, BossRushWindup, BossRush, BossWallHit, BossRainWarn, DripSplash,
-        BossHit, BossPhase2, BossDefeated, Victory,
+        BossHit, BossPhase2, BossDefeated, Victory, GaugeFound, LiftOnline, PumpKeyTaken, PumpSurge, MachineBrace, PipeWarning, BypassOnline,
     }
 
     public struct GameEvent
@@ -43,6 +43,12 @@ namespace DrownedBell.Core
         public readonly List<RippleBell> RippleBells = new List<RippleBell>();
         public readonly Boss Boss;
         public readonly int ArenaRoom;
+        public PumpMachine Warden { get; private set; }
+        public bool GaugeFound { get; private set; }
+        public bool BypassOpen { get; private set; }
+        public bool LiftOnline { get; private set; }
+        public bool PumpKey { get; private set; }
+        bool upHeld;
 
         public Phase Phase { get; private set; } = Phase.Playing;
         public float Time { get; private set; }
@@ -74,6 +80,13 @@ namespace DrownedBell.Core
             foreach (Spawn s in Level.Spawns)
             {
                 if (s.Kind == 'W') RippleBells.Add(new RippleBell(s, Level));
+                else if (s.Kind == 'p' || s.Kind == 'k' || s.Kind == 'M')
+                {
+                    var kind = s.Kind == 'M' ? EnemyKind.Warden : s.Kind == 'p' ? EnemyKind.Limpet : EnemyKind.Porter;
+                    var machine = new PumpMachine(id++, kind, s.Pos, s.Room);
+                    Foes.Add(machine);
+                    if (machine.IsWarden) Warden = machine;
+                }
                 else if (s.Kind == 'T') Foes.Add(new Dummy(id++, s.Pos, s.Room));
                 else if (s.Kind == 'c') Foes.Add(new Crab(id++, s.Pos, s.Room, Enemies));
                 else Foes.Add(new Jelly(id++, s.Pos, s.Room, Enemies));
@@ -81,6 +94,72 @@ namespace DrownedBell.Core
             Boss = new Boss(Level.BossSpawn, BossT);
             ArenaRoom = Level.HasBoss ? Level.RoomIndexAt(new Vec2(Level.BossSpawn.X, Level.BossSpawn.Y + 1f)) : -1;
             Room = Level.RoomIndexAt(Player.Body.Pos);
+        }
+
+        public World EnterSluice()
+        {
+            if (Phase != Phase.Victory || !Level.HasBoss)
+                throw new InvalidOperationException("The Sluice Works opens after the Undertoll falls.");
+            var next = new World(Move, Combat, Enemies, BossT, SluiceWorks.Build());
+            next.Time = Time;
+            next.Deaths = Deaths;
+            next.LungTaken = LungTaken;
+            next.Player.MaxHealth = Player.MaxHealth;
+            next.Player.Health = Player.MaxHealth;
+            return next;
+        }
+
+        public Chapter Chapter => Level.Outlet.HasValue ? Chapter.Sluice : Chapter.Belfry;
+
+        /// <summary>
+        /// What a save keeps of this run. Once the Undertoll is down the Belfry is finished, so the save already
+        /// points at the start of the Sluice Works, the same state EnterSluice would build.
+        /// </summary>
+        public SaveData Snapshot()
+        {
+            var s = new SaveData { Chapter = Chapter, Time = Time, Deaths = Deaths, Lung = LungTaken };
+            if (Chapter == Chapter.Belfry && Level.HasBoss && Boss.Dead)
+            {
+                s.Chapter = Chapter.Sluice;
+                return s;
+            }
+            s.Lamp = LampLit;
+            s.Gate = GrateOpen;
+            if (Chapter == Chapter.Sluice)
+            {
+                s.Gauge = GaugeFound;
+                s.Bypass = BypassOpen;
+                s.Lift = LiftOnline;
+                s.Key = PumpKey;
+                s.WardenDown = Warden != null && !Warden.Alive;
+            }
+            return s;
+        }
+
+        /// <summary>Rebuild a run from a save: everything opened stays open, and the diver wakes at the last lamp or lift.</summary>
+        public static World Restore(SaveData s, MovementTuning move = null, CombatTuning combat = null, EnemyTuning enemies = null, BossTuning boss = null)
+        {
+            var w = new World(move, combat, enemies, boss, s.Chapter == Chapter.Sluice ? SluiceWorks.Build() : null);
+            w.Time = s.Time;
+            w.Deaths = s.Deaths;
+            w.LungTaken = s.Lung;
+            w.Player.MaxHealth = w.Combat.MaxHealth + (s.Lung ? 1 : 0);
+            w.LampLit = s.Lamp;
+            w.Level.GrateOpen = s.Gate;
+            if (s.Lamp) w.RespawnFeet = w.Level.Checkpoint;
+            if (s.Chapter == Chapter.Sluice)
+            {
+                w.GaugeFound = s.Gauge;
+                w.BypassOpen = s.Bypass;
+                w.LiftOnline = s.Lift;
+                w.PumpKey = s.Key;
+                if (s.WardenDown && w.Warden != null) w.Warden.Alive = false;
+                if (s.Lift && w.Level.LiftLamp is Vec2 lift) w.RespawnFeet = lift;
+            }
+            w.Player.Place(w.RespawnFeet, w.Move);
+            w.Player.Health = w.Player.MaxHealth;
+            w.Room = w.Level.RoomIndexAt(w.Player.Body.Pos);
+            return w;
         }
 
         public void Emit(GameEventType type, Vec2 pos, int id = 0)
@@ -114,6 +193,7 @@ namespace DrownedBell.Core
             }
 
             Interactables();
+            if (Warden != null) SluiceStations(input.Up);
             ResolvePlayerAttack();
 
             foreach (Enemy e in Foes) if (e.Room == Room) e.Update(this, dt);
@@ -124,6 +204,11 @@ namespace DrownedBell.Core
             Hazards();
 
             if (Player.Health <= 0) Die();
+            if (Phase == Phase.Playing && GrateOpen && PumpKey && Level.Outlet is Vec2 outlet && Player.Body.Box.Overlaps(LampBox(outlet)))
+            {
+                Phase = Phase.Victory;
+                Emit(GameEventType.Victory, outlet);
+            }
             if (victoryPending && Phase == Phase.Playing)
             {
                 victoryTimer -= dt;
@@ -150,7 +235,7 @@ namespace DrownedBell.Core
                 if (!LampLit)
                 {
                     LampLit = true;
-                    RespawnFeet = Level.Checkpoint;
+                    if (!LiftOnline) RespawnFeet = Level.Checkpoint;
                     Player.Health = Player.MaxHealth;
                     Emit(GameEventType.LampLit, Level.Checkpoint);
                 }
@@ -160,13 +245,56 @@ namespace DrownedBell.Core
                     Emit(GameEventType.Rested, Level.Checkpoint);
                 }
             }
-            if (!LungTaken && pb.Overlaps(LungBox(Level.Heart)))
+            if (Level.HasHeart && !LungTaken && pb.Overlaps(LungBox(Level.Heart)))
             {
                 LungTaken = true;
                 Player.MaxHealth += 1;
                 Player.Health = Player.MaxHealth;
                 Emit(GameEventType.LungTaken, Level.Heart);
             }
+        }
+
+        void SluiceStations(bool up)
+        {
+            Vec2 feet = Player.Body.Feet;
+            bool near(Vec2 p) => MathF.Abs(feet.X - p.X) < 1f && MathF.Abs(feet.Y - p.Y) < 1.25f;
+            if (!GaugeFound && near(Level.Record.Value))
+            {
+                GaugeFound = true;
+                Emit(GameEventType.GaugeFound, Level.Record.Value);
+            }
+            Vec2 lift = Level.LiftLamp.Value;
+            if (near(lift) && (!LiftOnline || Player.Health < Player.MaxHealth))
+            {
+                LiftOnline = true;
+                RespawnFeet = lift;
+                Player.Health = Player.MaxHealth;
+                Emit(GameEventType.LiftOnline, lift);
+            }
+            if (!BypassOpen && near(SluiceWorks.WellStop))
+            {
+                BypassOpen = true;
+                Emit(GameEventType.BypassOnline, SluiceWorks.WellStop);
+            }
+            if (!Warden.Alive && !PumpKey && near(new Vec2(Warden.Home.X, Warden.Body.Bottom)))
+            {
+                PumpKey = true;
+                Emit(GameEventType.PumpKeyTaken, Warden.Home);
+            }
+            if (up && !upHeld)
+            {
+                Vec2? target = null;
+                if (near(SluiceWorks.TrapLift)) target = SluiceWorks.WellStop;
+                else if (near(SluiceWorks.WellStop) || (LiftOnline && near(lift))) target = Level.Checkpoint;
+                else if (near(Level.Checkpoint) && (LiftOnline || BypassOpen)) target = LiftOnline ? lift : SluiceWorks.WellStop;
+                if (target.HasValue)
+                {
+                    Player.Place(target.Value, Move);
+                    Room = Level.RoomIndexAt(Player.Body.Pos);
+                    Emit(GameEventType.RoomEntered, Player.Body.Pos, Room);
+                }
+            }
+            upHeld = up;
         }
 
         // ---- combat ---------------------------------------------------------------------------
@@ -221,6 +349,14 @@ namespace DrownedBell.Core
             }
             foreach (RippleBell bell in RippleBells)
                 if (HitByWave(bell.Waves, pb)) return;
+            foreach (Vec2 vent in Level.Vents)
+            {
+                if (SluiceWorks.VentAt(Time, vent) == VentState.Blowing && pb.Overlaps(SluiceWorks.JetBox(vent)))
+                {
+                    HurtPlayer(vent.X);
+                    return;
+                }
+            }
             if (ArenaRoom < 0 || Room != ArenaRoom) return;
             if (Boss.Harmful && pb.Overlaps(Boss.Body.Box)) { HurtPlayer(Boss.Body.Pos.X); return; }
             if (HitByWave(Boss.Waves, pb)) return;
@@ -302,7 +438,7 @@ namespace DrownedBell.Core
         {
             Player.Place(RespawnFeet, Move);
             Player.Health = Player.MaxHealth;
-            foreach (Enemy e in Foes) e.Reset();
+            foreach (Enemy e in Foes) if (e != Warden || e.Alive) e.Reset();
             foreach (RippleBell bell in RippleBells) bell.Reset();
             if (!Boss.Dead) Boss.Reset();
             Level.DoorsLocked = false;

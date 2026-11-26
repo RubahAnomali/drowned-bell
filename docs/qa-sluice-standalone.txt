@@ -1,0 +1,34 @@
+DROWNED BELL autoplay report
+result: VICTORY
+game time to victory: 122.0s
+real time: 145s
+deaths: 0 (planned boss retries 0)   victory events: 1
+boss retry, respawn to arena:  (+1.6s death fade)
+shortcut climbed: True   lamp True   lung True   grate True
+moves that landed off-plan: 0   no-path events: 0
+reached Lamp at 0.5s
+reached Lung at 47.1s
+reached Winch at 49.6s
+reached ShortcutUp at 58.2s
+reached Arena at 63.4s
+movement graph: 299 spots, built in 0.8s
+pause: simulation frozen while paused = True
+resized to 1280x720 (camera aspect 1.78)
+Sluice Works: Victory, lamp True, gate True, total deaths 0, campaign time 134.8
+dive again: new run time 1.5s, deaths 0, lamp False, grate False, lung False, boss Dormant hp 26, phase Playing, enemies alive 4/4
+audio output peak 0.5112, boss average 144.0 fps, longest frame 8 ms
+runtime errors: 0
+--- pilot log ---
+0:00.5  tide lamp lit
+0:10.1  enemy 0 killed
+0:28.1  enemy 3 killed
+0:44.5  enemy 2 killed
+0:47.1  Brass Lung taken
+0:49.6  winch hit, grate open
+0:58.2  climbed the shortcut back to the lamp
+1:04.0  the Undertoll wakes
+1:26.3  boss phase two
+1:31.4  hurt, 5 masks left
+1:57.9  hurt, 4 masks left
+1:58.8  the Undertoll falls silent
+2:02.0  VICTORY screen
