@@ -1,5 +1,9 @@
 # Drowned Bell handoff notes
 
+## Sounding Archive mechanics, 27 November 2026 (v0.4)
+
+Chapter III is playable end to end with placeholder shapes. Map: `tools/archive_rooms.py` generates `Core/ArchiveData.cs`; `Core/SoundingArchive.cs` holds the builder, stations (records, keys, order, chute rides) and the input-only `RouteInput`. Foes: `Core/ArchiveFoes.cs` (InkMoth, TuningWidow, Archivist); echo drums are `RippleBell` with `Echo`/`Harmless` ('O' live, 'o' practice). `Level.Chapter` now identifies the chapter; `Tile.KeyDoor` ('K') opens with the drum key. The Pump Warden's victory continues into the Archive (`World.EnterArchive`) and saves its start; finishing the Archive clears the save. Visuals: `Game/ArchiveFoeView.cs` and the `PLACEHOLDER` sprites in `LevelView.cs`; the art pass is specified in `docs/ARCHIVE_ART_BRIEF.md` and is being handed to another agent. Debug: `ARCHIVE_TRACE=1 dotnet run` prints the route. Next mechanics per the plan: Tidal Engine (chapter IV).
+
 ## Save and continue, 27 November 2026 (v0.3)
 
 Step 3 of the campaign plan is done. `Core/SaveGame.cs` holds the versioned key=value save format; `World.Snapshot()` and `World.Restore()` turn a run into a save and back (no positions: Continue wakes at the last lamp or lift with full health; after the Undertoll the save already points at the start of the Sluice Works). `Game/SaveStore.cs` writes `drowned-bell-save.txt` in `Application.persistentDataPath` through a temp file, falls back to it on read, and is switched off by `-autoplay` and `-autoshot`. The title shows Continue (Enter) and New game (N); finishing the Works clears the save. The browser template sets `autoSyncPersistentDataPath`. Headless "Save and continue" checks cover the format, damaged files and both chapters. Next per the plan: Sounding Archive (step 4).

@@ -5,6 +5,18 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.4 (Sounding Archive mechanics, placeholder art)
+
+- Chapter III, the Sounding Archive, follows the Pump Warden: Receiving Desk (green lamp, harmless practice
+  drum), Silt Stacks, Listening Cells, the optional Map Loft (a shelf climb to the second keeper record),
+  Return Chute (counterweight shortcut ridden with Up, live echo drum, drum-key door) and the Recording Choir.
+- New foes: the Ink Moth (marks a spot, dives, lodges), the Tuning Widow (two ripples 0.75 s apart, then a
+  punish window) and the Archivist of Depths boss (two ink silhouettes, only the real one swings its clapper;
+  in phase two each landing sends a delayed ripple pair).
+- Echo drums: ripple bells that ring twice.
+- Saves cover the Archive; saves from v0.3 still load.
+- The Archive's visuals are placeholders; docs/ARCHIVE_ART_BRIEF.md lists the art to make.
+
 ## v0.3 (Sluice Works and save/continue)
 
 - Chapter II, the Sluice Works: seven rooms after the Undertoll (Intake Dock, Bleeder Gallery, Valve Hall,

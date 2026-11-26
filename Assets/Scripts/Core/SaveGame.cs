@@ -5,7 +5,7 @@ using System.Text;
 
 namespace DrownedBell.Core
 {
-    public enum Chapter { Belfry = 1, Sluice = 2 }
+    public enum Chapter { Belfry = 1, Sluice = 2, Archive = 3 }
 
     /// <summary>
     /// One campaign save: which chapter, what is opened or found, and the running totals. Positions are not saved:
@@ -23,6 +23,8 @@ namespace DrownedBell.Core
         /// <summary>The chapter's lamp is lit, and its gate (Belfry grate or Sluice valve gate) is open.</summary>
         public bool Lamp, Gate;
         public bool Gauge, Bypass, Lift, Key, WardenDown;
+        /// <summary>Archive: second keeper record, drum key, Archivist beaten, sea-gate order taken. Optional in the file (added after v0.3).</summary>
+        public bool Ledger, DrumKey, ArchivistDown, Order;
 
         public string Serialize()
         {
@@ -40,6 +42,10 @@ namespace DrownedBell.Core
             Put("lift", Lift);
             Put("key", Key);
             Put("warden", WardenDown);
+            Put("ledger", Ledger);
+            Put("drumkey", DrumKey);
+            Put("archivist", ArchivistDown);
+            Put("order", Order);
             Put("end", "ok");
             return sb.ToString();
         }
@@ -72,6 +78,11 @@ namespace DrownedBell.Core
                 s.Lift = bool.Parse(map["lift"]);
                 s.Key = bool.Parse(map["key"]);
                 s.WardenDown = bool.Parse(map["warden"]);
+                bool Optional(string key) => map.TryGetValue(key, out string v2) && bool.Parse(v2);
+                s.Ledger = Optional("ledger");
+                s.DrumKey = Optional("drumkey");
+                s.ArchivistDown = Optional("archivist");
+                s.Order = Optional("order");
             }
             catch (Exception e) when (e is KeyNotFoundException || e is FormatException || e is OverflowException)
             {
@@ -84,7 +95,7 @@ namespace DrownedBell.Core
         public string Summary()
         {
             int t = (int)Time;
-            return (Chapter == Chapter.Sluice ? "Sluice Works" : "Drowned Belfry") + "   " + (t / 60) + ":" + (t % 60).ToString("00", CultureInfo.InvariantCulture);
+            return (Chapter == Chapter.Archive ? "Sounding Archive" : Chapter == Chapter.Sluice ? "Sluice Works" : "Drowned Belfry") + "   " + (t / 60) + ":" + (t % 60).ToString("00", CultureInfo.InvariantCulture);
         }
     }
 }

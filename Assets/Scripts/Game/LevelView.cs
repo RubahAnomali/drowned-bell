@@ -16,6 +16,9 @@ namespace DrownedBell.Game
         readonly Level lv;
         readonly List<SpriteRenderer> grate = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> doors = new List<SpriteRenderer>();
+        readonly List<SpriteRenderer> keyDoors = new List<SpriteRenderer>();
+        // Archive placeholders (shapes only; final art is listed in docs/ARCHIVE_ART_BRIEF.md).
+        SpriteRenderer ledger, drumKey, order, chuteLight;
         readonly SpriteRenderer lampFlame, lampGlow, winchArm, winchGlow, lung, lungGlow;
         readonly List<SpriteRenderer> archGlows = new List<SpriteRenderer>();
         readonly List<(RippleBell Bell, SpriteRenderer Shell, SpriteRenderer Signal, List<SpriteRenderer> Waves)> ripples =
@@ -34,10 +37,20 @@ namespace DrownedBell.Game
             foreach (RippleBell bell in w.RippleBells)
             {
                 Vector3 p = V(bell.Pos);
-                var rope = Art.NewSprite("ripple support", Art.Square, Palette.RockSide, -1, Root, 0.125f, 10f);
-                rope.transform.position = p + new Vector3(0, 5f);
-                var shell = Art.NewSprite("ripple bell", Art.TrainingBell, Color.white, 4, Root, 1.5f, 1.5f);
-                shell.transform.position = p;
+                SpriteRenderer shell;
+                if (bell.Echo)
+                {
+                    // PLACEHOLDER echo drum: grey for the harmless practice drum, warm for a live one.
+                    shell = Art.NewSprite("PLACEHOLDER echo drum", Art.Circle, bell.Harmless ? Palette.RockEdge : Palette.WarmDeep, 4, Root, 1.2f, 1.2f);
+                    shell.transform.position = p + new Vector3(0, 0.6f);
+                }
+                else
+                {
+                    var rope = Art.NewSprite("ripple support", Art.Square, Palette.RockSide, -1, Root, 0.125f, 10f);
+                    rope.transform.position = p + new Vector3(0, 5f);
+                    shell = Art.NewSprite("ripple bell", Art.TrainingBell, Color.white, 4, Root, 1.5f, 1.5f);
+                    shell.transform.position = p;
+                }
                 var signal = Art.NewSprite("ripple floor tell", Art.Square, Palette.Wave, 5, Root, 0.25f, 0.125f);
                 signal.transform.position = new Vector3(bell.Pos.X, bell.Floor + 0.07f);
                 ripples.Add((bell, shell, signal, new List<SpriteRenderer>(2)));
@@ -62,6 +75,13 @@ namespace DrownedBell.Game
                 for (int x = 0; x < lv.W; x++)
                 {
                     Tile t = lv.At(x, y);
+                    if (t == Tile.KeyDoor)
+                    {
+                        var bars = Art.NewSprite("drum-key door", Art.Square, Palette.Warm, 2, Root, 0.5f, 1f);
+                        bars.transform.position = new Vector3(x + 0.5f, y + 0.5f);
+                        keyDoors.Add(bars);
+                        continue;
+                    }
                     if (t != Tile.Grate && t != Tile.Door) continue;
                     var sr = Art.NewSprite(t == Tile.Grate ? "grate" : "door", Art.Square, t == Tile.Grate ? Palette.WarmDeep : Palette.RockEdge, 2, Root, t == Tile.Grate ? 0.86f : 0.22f, t == Tile.Grate ? 0.86f : 1f);
                     sr.transform.position = new Vector3(x + 0.5f, y + 0.5f);
@@ -95,7 +115,8 @@ namespace DrownedBell.Game
                 lung = Art.NewSprite("lung", PixelArt.BrassLung, Color.white, 6, Root);
                 lung.transform.position = lg + new Vector3(0, 0.5f);
             }
-            if (lv.Outlet is Vec2 outlet) BuildSluiceFixtures(outlet);
+            if (lv.Chapter == Chapter.Sluice && lv.Outlet is Vec2 outlet) BuildSluiceFixtures(outlet);
+            if (lv.Chapter == Chapter.Archive) BuildArchivePlaceholders();
 
             // Warm arch lamps flank the drop into the bell's chamber.
             foreach (Vec2 a in lv.ArchLamps)
@@ -176,6 +197,21 @@ namespace DrownedBell.Game
             hatch.transform.position = V(outlet) + new Vector3(0, 1.5f);
         }
 
+        void BuildArchivePlaceholders()
+        {
+            ledger = Art.NewSprite("PLACEHOLDER keeper ledger", Art.Square, Palette.Warm, 8, Root, 0.6f, 0.45f);
+            ledger.transform.position = V(lv.Record.Value) + new Vector3(0, 0.5f);
+            drumKey = Art.NewSprite("PLACEHOLDER drum key", Art.Circle, Palette.Warm, 12, Root, 0.45f, 0.45f);
+            drumKey.transform.position = V(world.Widow.Body.Feet) + new Vector3(0, 0.6f);
+            order = Art.NewSprite("PLACEHOLDER sea-gate order", Art.Square, Palette.Text, 12, Root, 0.7f, 0.35f);
+            var chute = Art.NewSprite("PLACEHOLDER chute sill", Art.Square, Palette.RockEdge, 3, Root, 2f, 0.2f);
+            chute.transform.position = V(SoundingArchive.ChuteStop) + new Vector3(0, 0.1f);
+            chuteLight = Art.NewSprite("PLACEHOLDER chute light", Art.Square, Palette.Warm, 4, Root, 0.3f, 0.3f);
+            chuteLight.transform.position = V(SoundingArchive.ChuteStop) + new Vector3(0, 1.2f);
+            var exit = Art.NewSprite("PLACEHOLDER engine-room exit", Art.Square, Palette.WarmDeep, -1, Root, 1.6f, 2.4f);
+            exit.transform.position = V(lv.Outlet.Value) + new Vector3(0, 1.2f);
+        }
+
         static Vector3 V(Vec2 p) => new Vector3(p.X, p.Y);
 
         bool Solidish(int x, int y)
@@ -213,7 +249,7 @@ namespace DrownedBell.Game
             bg.Quad(r.MinX, r.MinY, r.MaxX, tide, Palette.A(Palette.RockSide, 0.45f));
             for (float x = r.MinX + 1.5f; x + 1.5f < r.MaxX; x += 4.5f)
                 bg.Quad(x, tide, x + 1.5f, tide + 0.0625f, Palette.RockSide);
-            if (lv.Outlet.HasValue)
+            if (lv.Chapter == Chapter.Sluice)
             {
                 // Riveted iron mains run across each bay and drop towards the outlets.
                 float y = r.MinY + 7f;
@@ -276,6 +312,15 @@ namespace DrownedBell.Game
         public void Tick(float dt)
         {
             if (world.ArenaRoom < 0 && !lv.Outlet.HasValue) return;
+            if (ledger != null)
+            {
+                ledger.enabled = !world.LedgerFound;
+                drumKey.enabled = !world.Widow.Alive && !world.DrumKey;
+                order.enabled = !world.Archivist.Alive && !world.OrderTaken;
+                order.transform.position = V(world.Archivist.DropAt) + new Vector3(0, 0.4f);
+                chuteLight.color = lv.GrateOpen ? Palette.Warm : Palette.RockEdge;
+                foreach (SpriteRenderer k in keyDoors) k.enabled = !lv.KeyOpen;
+            }
             time += dt;
             if (world.Warden != null)
             {

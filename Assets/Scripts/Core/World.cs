@@ -14,6 +14,8 @@ namespace DrownedBell.Core
         RippleWindup, RippleToll,
         BossAwake, BossSlamWindup, BossSlam, BossRushWindup, BossRush, BossWallHit, BossRainWarn, DripSplash,
         BossHit, BossPhase2, BossDefeated, Victory, GaugeFound, LiftOnline, PumpKeyTaken, PumpSurge, MachineBrace, PipeWarning, BypassOnline,
+        MothMark, MothDive, MothLodged, WidowSpread, WidowRing, ArchivistAwake, ArchivistMark, ArchivistLand, ArchivistPhase2, ArchivistDefeated,
+        LedgerFound, DrumKeyTaken, OrderTaken, ChuteRide,
     }
 
     public struct GameEvent
@@ -48,6 +50,11 @@ namespace DrownedBell.Core
         public bool BypassOpen { get; private set; }
         public bool LiftOnline { get; private set; }
         public bool PumpKey { get; private set; }
+        public TuningWidow Widow { get; private set; }
+        public Archivist Archivist { get; private set; }
+        public bool LedgerFound { get; private set; }
+        public bool DrumKey { get; private set; }
+        public bool OrderTaken { get; private set; }
         bool upHeld;
 
         public Phase Phase { get; private set; } = Phase.Playing;
@@ -87,6 +94,10 @@ namespace DrownedBell.Core
                     Foes.Add(machine);
                     if (machine.IsWarden) Warden = machine;
                 }
+                else if (s.Kind == 'O' || s.Kind == 'o') RippleBells.Add(new RippleBell(s, Level));
+                else if (s.Kind == 'm') Foes.Add(new InkMoth(id++, s.Pos, s.Room));
+                else if (s.Kind == 'w') Foes.Add(Widow = new TuningWidow(id++, s.Pos, s.Room));
+                else if (s.Kind == 'Z') Foes.Add(Archivist = new Archivist(id++, s.Pos, s.Room));
                 else if (s.Kind == 'T') Foes.Add(new Dummy(id++, s.Pos, s.Room));
                 else if (s.Kind == 'c') Foes.Add(new Crab(id++, s.Pos, s.Room, Enemies));
                 else Foes.Add(new Jelly(id++, s.Pos, s.Room, Enemies));
@@ -109,7 +120,39 @@ namespace DrownedBell.Core
             return next;
         }
 
-        public Chapter Chapter => Level.Outlet.HasValue ? Chapter.Sluice : Chapter.Belfry;
+        /// <summary>After the Pump Warden: the next chapter, carrying the upgrades, records, time and deaths.</summary>
+        public World EnterArchive()
+        {
+            if (Phase != Phase.Victory || Chapter != Chapter.Sluice)
+                throw new InvalidOperationException("The Sounding Archive opens after the Sluice Works.");
+            var next = new World(Move, Combat, Enemies, BossT, SoundingArchive.Build());
+            next.Time = Time;
+            next.Deaths = Deaths;
+            next.LungTaken = LungTaken;
+            next.GaugeFound = GaugeFound;
+            next.Player.MaxHealth = Player.MaxHealth;
+            next.Player.Health = Player.MaxHealth;
+            return next;
+        }
+
+        public Chapter Chapter => Level.Chapter;
+
+        internal void SetArchiveFlag(GameEventType what, Vec2 at)
+        {
+            if (what == GameEventType.LedgerFound) LedgerFound = true;
+            else if (what == GameEventType.DrumKeyTaken) { DrumKey = true; Level.KeyOpen = true; }
+            else if (what == GameEventType.OrderTaken) OrderTaken = true;
+            Emit(what, at);
+        }
+
+        /// <summary>A lift or chute ride: the diver appears at the other stop.</summary>
+        internal void Ride(Vec2 to)
+        {
+            Player.Place(to, Move);
+            Room = Level.RoomIndexAt(Player.Body.Pos);
+            Emit(GameEventType.ChuteRide, to);
+            Emit(GameEventType.RoomEntered, Player.Body.Pos, Room);
+        }
 
         /// <summary>
         /// What a save keeps of this run. Once the Undertoll is down the Belfry is finished, so the save already
@@ -117,17 +160,29 @@ namespace DrownedBell.Core
         /// </summary>
         public SaveData Snapshot()
         {
-            var s = new SaveData { Chapter = Chapter, Time = Time, Deaths = Deaths, Lung = LungTaken };
+            var s = new SaveData { Chapter = Chapter, Time = Time, Deaths = Deaths, Lung = LungTaken, Gauge = GaugeFound };
             if (Chapter == Chapter.Belfry && Level.HasBoss && Boss.Dead)
             {
                 s.Chapter = Chapter.Sluice;
                 return s;
             }
+            // A finished chapter saves as the start of the next one.
+            if (Chapter == Chapter.Sluice && Phase == Phase.Victory)
+            {
+                s.Chapter = Chapter.Archive;
+                return s;
+            }
             s.Lamp = LampLit;
             s.Gate = GrateOpen;
+            if (Chapter == Chapter.Archive)
+            {
+                s.Ledger = LedgerFound;
+                s.DrumKey = DrumKey;
+                s.ArchivistDown = Archivist != null && !Archivist.Alive;
+                s.Order = OrderTaken;
+            }
             if (Chapter == Chapter.Sluice)
             {
-                s.Gauge = GaugeFound;
                 s.Bypass = BypassOpen;
                 s.Lift = LiftOnline;
                 s.Key = PumpKey;
@@ -139,7 +194,8 @@ namespace DrownedBell.Core
         /// <summary>Rebuild a run from a save: everything opened stays open, and the diver wakes at the last lamp or lift.</summary>
         public static World Restore(SaveData s, MovementTuning move = null, CombatTuning combat = null, EnemyTuning enemies = null, BossTuning boss = null)
         {
-            var w = new World(move, combat, enemies, boss, s.Chapter == Chapter.Sluice ? SluiceWorks.Build() : null);
+            var w = new World(move, combat, enemies, boss,
+                s.Chapter == Chapter.Sluice ? SluiceWorks.Build() : s.Chapter == Chapter.Archive ? SoundingArchive.Build() : null);
             w.Time = s.Time;
             w.Deaths = s.Deaths;
             w.LungTaken = s.Lung;
@@ -147,9 +203,16 @@ namespace DrownedBell.Core
             w.LampLit = s.Lamp;
             w.Level.GrateOpen = s.Gate;
             if (s.Lamp) w.RespawnFeet = w.Level.Checkpoint;
+            w.GaugeFound = s.Gauge;
+            if (s.Chapter == Chapter.Archive)
+            {
+                w.LedgerFound = s.Ledger;
+                w.DrumKey = w.Level.KeyOpen = s.DrumKey;
+                if (s.ArchivistDown && w.Archivist != null) w.Archivist.Alive = false;
+                w.OrderTaken = s.Order;
+            }
             if (s.Chapter == Chapter.Sluice)
             {
-                w.GaugeFound = s.Gauge;
                 w.BypassOpen = s.Bypass;
                 w.LiftOnline = s.Lift;
                 w.PumpKey = s.Key;
@@ -194,6 +257,7 @@ namespace DrownedBell.Core
 
             Interactables();
             if (Warden != null) SluiceStations(input.Up);
+            if (Chapter == Chapter.Archive) SoundingArchive.Stations(this, input.Up, ref upHeld);
             ResolvePlayerAttack();
 
             foreach (Enemy e in Foes) if (e.Room == Room) e.Update(this, dt);
@@ -204,7 +268,8 @@ namespace DrownedBell.Core
             Hazards();
 
             if (Player.Health <= 0) Die();
-            if (Phase == Phase.Playing && GrateOpen && PumpKey && Level.Outlet is Vec2 outlet && Player.Body.Box.Overlaps(LampBox(outlet)))
+            bool exitOpen = Chapter == Chapter.Archive ? OrderTaken : GrateOpen && PumpKey;
+            if (Phase == Phase.Playing && exitOpen && Level.Outlet is Vec2 outlet && Player.Body.Box.Overlaps(LampBox(outlet)))
             {
                 Phase = Phase.Victory;
                 Emit(GameEventType.Victory, outlet);
@@ -347,8 +412,14 @@ namespace DrownedBell.Core
                 if (e.TryAttackBox(out Aabb box) && pb.Overlaps(box)) { HurtPlayer(e.Body.Pos.X); return; }
                 if (e is Jelly j && j.RingHits(Player.Body.Pos)) { HurtPlayer(e.Body.Pos.X); return; }
             }
+            foreach (Enemy e in Foes)
+            {
+                if (e.Room != Room) continue;
+                if (e is TuningWidow tw && HitByWave(tw.Waves, pb)) return;
+                if (e is Archivist ar && HitByWave(ar.Waves, pb)) return;
+            }
             foreach (RippleBell bell in RippleBells)
-                if (HitByWave(bell.Waves, pb)) return;
+                if (!bell.Harmless && HitByWave(bell.Waves, pb)) return;
             foreach (Vec2 vent in Level.Vents)
             {
                 if (SluiceWorks.VentAt(Time, vent) == VentState.Blowing && pb.Overlaps(SluiceWorks.JetBox(vent)))
@@ -438,7 +509,7 @@ namespace DrownedBell.Core
         {
             Player.Place(RespawnFeet, Move);
             Player.Health = Player.MaxHealth;
-            foreach (Enemy e in Foes) if (e != Warden || e.Alive) e.Reset();
+            foreach (Enemy e in Foes) if ((e != Warden && e != Archivist) || e.Alive) e.Reset();
             foreach (RippleBell bell in RippleBells) bell.Reset();
             if (!Boss.Dead) Boss.Reset();
             Level.DoorsLocked = false;

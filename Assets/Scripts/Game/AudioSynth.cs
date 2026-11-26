@@ -71,6 +71,21 @@ namespace DrownedBell.Game
             clips[GameEventType.MachineBrace] = Clicks("ratchet", 0.65f, 4, 0.18f);
             clips[GameEventType.PipeWarning] = Sweep("whistle", 0.80f, 390f, 710f, 0.12f);
             clips[GameEventType.PumpSurge] = Noise("pressure relief", 0.75f, 0.32f, 790f);
+            // Sounding Archive: each tell has its own sound so it reads with the screen hidden.
+            clips[GameEventType.MothMark] = Sweep("moth fold", 0.5f, 900f, 1500f, 0.1f);
+            clips[GameEventType.MothDive] = Whoosh("moth dive", 0.3f, 0.35f);
+            clips[GameEventType.MothLodged] = Noise("moth lodge", 0.12f, 0.35f, 600f);
+            clips[GameEventType.WidowSpread] = Sweep("fork spread", 0.8f, 520f, 1040f, 0.12f);
+            clips[GameEventType.WidowRing] = Bell("fork ring", 0.7f, 523f, 0.26f);
+            clips[GameEventType.ArchivistAwake] = Bell("archivist", 2.4f, 69f, 0.65f);
+            clips[GameEventType.ArchivistMark] = Clicks("clapper", 1.0f, 8, 0.22f);
+            clips[GameEventType.ArchivistLand] = Mix(Bell("ink land", 1.2f, 92f, 0.5f), Noise("ink thud", 0.4f, 0.6f, 150f));
+            clips[GameEventType.ArchivistPhase2] = Bell("archivist rage", 2f, 61f, 0.65f);
+            clips[GameEventType.ArchivistDefeated] = Bell("archive silence", 4f, 58f, 0.7f);
+            clips[GameEventType.LedgerFound] = Chord("ledger", 1.0f, new[] { 440f, 554f, 659f }, 0.18f);
+            clips[GameEventType.DrumKeyTaken] = Chord("drum key", 1.0f, new[] { 392f, 494f, 659f }, 0.2f);
+            clips[GameEventType.OrderTaken] = Chord("order", 1.6f, new[] { 330f, 415f, 494f, 659f }, 0.22f);
+            clips[GameEventType.ChuteRide] = Sweep("chute", 0.6f, 300f, 120f, 0.15f);
             clips[GameEventType.PumpKeyTaken] = clips[GameEventType.LungTaken];
             clips[GameEventType.GaugeFound] = clips[GameEventType.Rested];
             clips[GameEventType.LiftOnline] = clips[GameEventType.LampLit];

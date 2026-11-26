@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DrownedBell.Core
 {
-    public enum EnemyKind { Crab, Jelly, Dummy, Limpet, Porter, Warden }
+    public enum EnemyKind { Crab, Jelly, Dummy, Limpet, Porter, Warden, Moth, Widow, Archivist }
 
     public abstract class Enemy
     {

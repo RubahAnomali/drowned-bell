@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DrownedBell.Core
 {
-    public enum Tile : byte { Empty, Rock, OneWay, Spikes, Grate, Door }
+    public enum Tile : byte { Empty, Rock, OneWay, Spikes, Grate, Door, KeyDoor }
 
     public sealed class RoomInfo
     {
@@ -32,6 +32,10 @@ namespace DrownedBell.Core
         readonly Tile[] tiles;
         public bool GrateOpen;
         public bool DoorsLocked;
+        /// <summary>The Archive's drum-key door ('K') is open.</summary>
+        public bool KeyOpen;
+        /// <summary>Which chapter this map belongs to; set by the chapter's builder.</summary>
+        public Chapter Chapter = Chapter.Belfry;
         public Vec2 PlayerStart, Checkpoint, Lever, Heart, BossSpawn;
         public Vec2? Record, LiftLamp;
         public Vec2? Outlet { get; private set; }
@@ -82,6 +86,7 @@ namespace DrownedBell.Core
                         case '^': t = Tile.Spikes; break;
                         case 'G': t = Tile.Grate; break;
                         case 'D': t = Tile.Door; break;
+                        case 'K': t = Tile.KeyDoor; break;
                         case 'P': lv.PlayerStart = at; break;
                         case 'C': lv.Checkpoint = at; break;
                         case 'L': lv.Lever = at; break;
@@ -93,6 +98,11 @@ namespace DrownedBell.Core
                         case 'B': lv.BossSpawn = at; lv.HasBoss = true; break;
                         case 'b': lv.Landmarks.Add(at); break;
                         case 'a': lv.ArchLamps.Add(at); break;
+                        case 'm':
+                        case 'w':
+                        case 'Z':
+                        case 'O':
+                        case 'o':
                         case 'p':
                         case 'k':
                         case 'M':
@@ -117,7 +127,7 @@ namespace DrownedBell.Core
         public bool Solid(int x, int y)
         {
             Tile t = At(x, y);
-            return t == Tile.Rock || (t == Tile.Grate && !GrateOpen) || (t == Tile.Door && DoorsLocked);
+            return t == Tile.Rock || (t == Tile.Grate && !GrateOpen) || (t == Tile.Door && DoorsLocked) || (t == Tile.KeyDoor && !KeyOpen);
         }
 
         public bool OneWay(int x, int y) => At(x, y) == Tile.OneWay;

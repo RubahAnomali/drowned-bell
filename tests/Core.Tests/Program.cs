@@ -41,6 +41,7 @@ internal static class Program
     {
         if (Environment.GetEnvironmentVariable("BOSS_TRACE") == "1") { BossTrace.Run(); return 0; }
         if (Environment.GetEnvironmentVariable("ROUTE_TRACE") == "1") { RouteTrace.Run(); return 0; }
+        if (Environment.GetEnvironmentVariable("ARCHIVE_TRACE") == "1") { ArchiveTrace.Run(); return 0; }
         SceneTuning.Check(Ok);
         Movement();
         MouseAim();
@@ -54,6 +55,7 @@ internal static class Program
         EdgeCases();
         RunState();
         SaveChecks();
+        ArchiveChecks.Run(Ok);
         Route();
         LevelPlanChecks.Run(Ok);
         Pilot();

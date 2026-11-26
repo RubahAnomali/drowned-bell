@@ -26,7 +26,7 @@ Belfry Landing teaches controls and establishes the checkpoint lamp. Flooded Nav
 | Counterweight Walk | Bait a Chain Porter into throwing across a safe recess, then cross during its rewind. | Release the lift beside the local lamp |
 | Duty Pump | Read the relief cycle while fighting the Pump Warden. | Pump key and the eastern archive hatch, the current build ending |
 
-### III. Sounding Archive · 15–20 minutes · planned
+### III. Sounding Archive · 15–20 minutes · mechanics playable, placeholder art (v0.4)
 
 | Room | Player task and route purpose | Exit or reward |
 |---|---|---|

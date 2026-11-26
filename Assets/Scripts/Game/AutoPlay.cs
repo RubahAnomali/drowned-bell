@@ -186,6 +186,32 @@ namespace DrownedBell.Game
                     if (intake.Phase != Phase.Victory) { errors.Add("Sluice outlet unreachable"); break; }
                     yield return Capture("sluice_outlet");
                     game.ContinueJourney();
+
+                    // Chapter III: the Sounding Archive, played by the same input-only route the headless checks use.
+                    World archive = game.CurrentWorld;
+                    game.SetPilot(() => SoundingArchive.RouteInput(archive));
+                    var archiveBeats = new HashSet<string>();
+                    int archiveRoom = -1;
+                    float archiveDeadline = Time.realtimeSinceStartup + 180f;
+                    while (archive.Phase != Phase.Victory && Time.realtimeSinceStartup < archiveDeadline)
+                    {
+                        if (archiveRoom != archive.Room) { archiveRoom = archive.Room; yield return Capture("archive_room_" + archiveRoom); }
+                        foreach (Enemy foe in archive.Foes)
+                        {
+                            if (foe.Room != archive.Room || !foe.Alive) continue;
+                            string beat = foe is Archivist ar && ar.Engaged ? "archivist_" + ar.Beat + (ar.SecondPhase ? "_phase2" : "")
+                                : foe is TuningWidow tw && tw.Beat != WidowBeat.Idle ? "widow_" + tw.Beat
+                                : foe is InkMoth im && im.Beat != MothBeat.Hover ? "moth_" + im.Beat : null;
+                            if (beat != null && archiveBeats.Add(beat)) yield return Capture(beat);
+                        }
+                        yield return null;
+                    }
+                    report.Add("Sounding Archive: " + archive.Phase + ", ledger " + archive.LedgerFound + ", drum key " + archive.DrumKey + ", chute " + archive.GrateOpen +
+                        ", order " + archive.OrderTaken + ", total deaths " + archive.Deaths + ", campaign time " + archive.Time.ToString("0.0"));
+                    if (archive.Phase != Phase.Victory) { errors.Add("Archive exit unreachable"); break; }
+                    yield return new WaitForSecondsRealtime(2f);
+                    yield return Capture("archive_victory_screen");
+                    game.ContinueJourney();
                     yield return new WaitForSecondsRealtime(1.5f);
                     World fresh = game.CurrentWorld;
                     report.Add("dive again: new run time " + fresh.Time.ToString("0.0") + "s, deaths " + fresh.Deaths + ", lamp " + fresh.LampLit + ", grate " + fresh.GrateOpen + ", lung " + fresh.LungTaken +
