@@ -451,8 +451,31 @@ namespace DrownedBell.Core
             if (recovering && !incoming)
             {
                 if (onLedge) return new PlayerInput { Down = true, JumpPressed = true };
-                if (MathF.Abs(dx) > 2.3f) { input.MoveX = toward; return input; }
-                input.MoveX = toward * 0.06f;
+                // The bell is harmless while it recovers but its body hurts the instant the recovery ends, so never be
+                // inside it then. The slam also drifts toward the diver, which herds a diver who always punishes from
+                // the wall side into the corner: after reaching it, cross through to the open side instead.
+                float recoverTime = st == BossState.SlamRecover ? w.BossT.SlamRecover : st == BossState.RushRecover ? w.BossT.RushRecover : w.BossT.RainRecover;
+                float remaining = recoverTime * (b.Phase2 ? w.BossT.Phase2Recover : 1f) - b.Fsm.Time;
+                bool inside = MathF.Abs(dx) < 1.95f;
+                bool wallSide = Math.Sign(px - (arenaMinX + arenaMaxX) * 0.5f) == -toward && MathF.Abs(bx - (arenaMinX + arenaMaxX) * 0.5f) > 1.5f;
+                if (inside && remaining < 0.2f)
+                {
+                    // Out of time: leave the way we were already going (through, when crossing; back, otherwise).
+                    input.MoveX = wallSide ? toward : -toward;
+                    if (p.DashCooldown <= 0f) input.DashPressed = true;
+                    return input;
+                }
+                float reach = remaining * 8.2f + (p.DashCooldown <= 0f ? 3.0f : 0f);
+                bool canCross = reach > MathF.Abs(dx) + 2.3f;
+                if (wallSide && (canCross || inside))
+                {
+                    input.MoveX = toward;
+                    if (p.DashCooldown <= 0f && MathF.Abs(dx) > 2.6f) input.DashPressed = true;
+                    input.AttackPressed = MathF.Abs(dx) < 2.8f && !p.Attacking;
+                    return input;
+                }
+                if (MathF.Abs(dx) > 2.5f) { input.MoveX = toward; return input; }
+                input.MoveX = inside ? -toward : 0f;
                 input.AttackPressed = !p.Attacking;
                 return input;
             }
@@ -475,7 +498,7 @@ namespace DrownedBell.Core
                 if (MathF.Abs(x - bx) < keep || (x - bx) * (px - bx) < 0f) continue;
                 float clear = float.PositiveInfinity;
                 foreach (Drip d in w.Boss.Drips) clear = MathF.Min(clear, MathF.Abs(d.X - x));
-                if (clear < 1.3f) continue;
+                if (clear < 1.0f) continue;
                 float cost = MathF.Abs(off);
                 if (cost < bestCost) { bestCost = cost; best = x; }
             }

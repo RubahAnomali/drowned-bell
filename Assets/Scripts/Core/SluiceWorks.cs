@@ -71,10 +71,64 @@ namespace DrownedBell.Core
         public static readonly Vec2 TrapLift = new Vec2(125.5f, 2f);
         public static readonly Vec2 WellStop = new Vec2(122.5f, 20f);
 
+        /// <summary>
+        /// A diver who reads the Warden's tells: leave a lane before it vents, cross to the far side while the sweep
+        /// braces (the sweep starts at the Warden's centre and only reaches the side it faces), then swing during
+        /// the recovery. Uses only ordinary move, dash and aimed-swing inputs.
+        /// </summary>
+        /// <summary>Seconds of input lag the scripted diver is playing with; it jumps that much earlier, as a player who has learned the rhythm would.</summary>
+        public static float Lead;
+
+        static PlayerInput WardenTactic(World w, PumpMachine wd)
+        {
+            Vec2 feet = w.Player.Body.Feet;
+            float dx = feet.X - wd.Home.X, side = dx >= 0f ? 1f : -1f, target = feet.X;
+            bool dash = false, swing = false, jump = false;
+            switch (wd.Beat)
+            {
+                case MachineBeat.Mark:
+                case MachineBeat.Jet:
+                {
+                    Aabb box = wd.AttackLane;
+                    if (feet.X > box.MinX - 1.0f && feet.X < box.MaxX + 1.0f)
+                    {
+                        float left = box.MinX - 1.0f, right = box.MaxX + 1.0f;
+                        target = System.MathF.Abs(feet.X - left) < System.MathF.Abs(right - feet.X) ? left : right;
+                        dash = System.MathF.Abs(target - feet.X) > 2.5f;
+                    }
+                    break;
+                }
+                case MachineBeat.Brace:
+                case MachineBeat.Strike:
+                {
+                    // The sweep is low: jump it. A delayed swing hangs longer, so jump late, not at the first pose.
+                    Aabb box = wd.AttackLane;
+                    bool inSweep = feet.X > box.MinX - 0.6f && feet.X < box.MaxX + 0.6f;
+                    float untilStrike = wd.Beat == MachineBeat.Brace ? wd.BraceTime - wd.Elapsed : 0f;
+                    jump = inSweep && w.Player.Body.Grounded && wd.Beat == MachineBeat.Brace && untilStrike < 0.14f + Lead;
+                    break;
+                }
+                case MachineBeat.Recover:
+                    target = wd.Home.X + side * 2.4f;
+                    swing = System.MathF.Abs(dx) < 3.2f;
+                    break;
+                default:
+                    target = wd.Home.X + side * 3.0f;
+                    break;
+            }
+            float move = System.MathF.Abs(target - feet.X) < 0.15f ? 0 : Mathx.Sign(target - feet.X);
+            return new PlayerInput
+            {
+                MoveX = move, DashPressed = dash && w.Player.DashCooldown <= 0f, JumpPressed = jump, JumpHeld = jump || !w.Player.Body.Grounded,
+                AttackPressed = swing && !w.Player.Attacking, HasAim = swing, AimX = -dx,
+            };
+        }
+
         // The standalone pilot uses ordinary move, swing and lift inputs throughout.
         internal static PlayerInput RouteInput(World w, bool takeRecord = true)
         {
             Vec2 feet = w.Player.Body.Feet;
+            if (w.Warden != null && w.Warden.Alive && w.Warden.Engaged && w.Warden.Room == w.Room) return WardenTactic(w, w.Warden);
             float target = w.Level.Outlet.Value.X;
             bool up = false;
             foreach (Enemy e in w.Foes)

@@ -86,25 +86,34 @@ namespace DrownedBell.Core
     public sealed class BossTuning
     {
         public int Health = 26;
+        /// <summary>Masks a direct hit from the bell's body costs (a slam landing on you, a rush). Waves and drips cost one.</summary>
+        public int ContactDamage = 2;
+        /// <summary>Boss fights only: every this many landed hook hits on a boss restore one mask, so a bold fight can be won
+        /// but a greedy one cannot (the bosses punish greed). Hits on ordinary enemies never heal.</summary>
+        public int HealEveryHits = 7;
         public float IntroTime = 1.6f;
-        public float IdleTime = 0.7f;
-        public float SlamWindup = 0.8f;
+        public float IdleTime = 0.45f;
+        public float SlamWindup = 0.7f;
+        /// <summary>Delayed slam: the bell hangs this long at the top before dropping, to punish early dodges.</summary>
+        public float SlamHold = 0.35f;
+        /// <summary>Phase two: a second shockwave pair follows the first this long after landing.</summary>
+        public float SlamEcho = 0.55f;
         public float SlamRise = 2.2f;
         /// <summary>How fast the rising bell drifts toward the diver during the first part of its wind-up.</summary>
         public float SlamDrift = 2.5f;
-        public float SlamRecover = 1.4f;
+        public float SlamRecover = 1.05f;
         public float WaveSpeed = 8f;
         public float WaveHeight = 0.9f;
-        public float RushWindup = 0.75f;
-        public float RushSpeed = 11f;
-        public float RushRecover = 1.2f;
-        public float RainWindup = 0.9f;
-        public float RainFallSpeed = 14f;
-        public float RainRecover = 1.1f;
+        public float RushWindup = 0.65f;
+        public float RushSpeed = 12f;
+        public float RushRecover = 0.95f;
+        public float RainWindup = 0.85f;
+        public float RainFallSpeed = 16f;
+        public float RainRecover = 0.95f;
         /// <summary>Odd on purpose: the middle drip falls exactly where the diver stood, so standing still is never safe.</summary>
         public int RainDrops = 5;
         /// <summary>Speed and recovery multiplier once the bell is below half health.</summary>
-        public float Phase2Speed = 1.15f;
-        public float Phase2Recover = 0.8f;
+        public float Phase2Speed = 1.25f;
+        public float Phase2Recover = 0.75f;
     }
 }

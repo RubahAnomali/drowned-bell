@@ -33,6 +33,10 @@ namespace DrownedBell.Core
         public abstract int RejectedTransitions { get; }
         /// <summary>Touching the body hurts the diver.</summary>
         public virtual bool Harmful => Alive;
+        /// <summary>Masks lost to touching the body, and to a live attack box. Bosses override these.</summary>
+        public virtual bool IsBoss => false;
+        public virtual int ContactDamage => 1;
+        public virtual int AttackDamage => 1;
         /// <summary>The active attack box, if an attack is live this tick.</summary>
         public virtual bool TryAttackBox(out Aabb box) { box = default; return false; }
         public abstract void Update(World w, float dt);

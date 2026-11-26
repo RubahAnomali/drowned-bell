@@ -14,7 +14,7 @@ namespace DrownedBell.Core
         RippleWindup, RippleToll,
         BossAwake, BossSlamWindup, BossSlam, BossRushWindup, BossRush, BossWallHit, BossRainWarn, DripSplash,
         BossHit, BossPhase2, BossDefeated, Victory, GaugeFound, LiftOnline, PumpKeyTaken, PumpSurge, MachineBrace, PipeWarning, BypassOnline,
-        MothMark, MothDive, MothLodged, WidowSpread, WidowRing, ArchivistAwake, ArchivistMark, ArchivistLand, ArchivistPhase2, ArchivistDefeated,
+        PlayerHealed, MothMark, MothDive, MothLodged, WidowSpread, WidowRing, ArchivistAwake, ArchivistMark, ArchivistLand, ArchivistPhase2, ArchivistDefeated,
         LedgerFound, DrumKeyTaken, OrderTaken, ChuteRide,
     }
 
@@ -377,6 +377,7 @@ namespace DrownedBell.Core
                 if (e.TakeHit(this, swing, 1, Player.Body.Pos.X))
                 {
                     connected = true;
+                    if (e.IsBoss) BossHitLanded();
                     HitStop = Combat.HitStop;
                     Emit(GameEventType.HitEnemy, e.Body.Pos, e.Id);
                 }
@@ -384,6 +385,7 @@ namespace DrownedBell.Core
             if (ArenaRoom >= 0 && Room == ArenaRoom && hit.Overlaps(Boss.Body.Box) && Boss.TakeHit(this, swing, 1))
             {
                 connected = true;
+                BossHitLanded();
                 HitStop = Boss.Dead ? 0.12f : Combat.HitStop;
             }
             // The winch, and spikes for a down-swing pogo, also count as something to hit.
@@ -401,6 +403,18 @@ namespace DrownedBell.Core
             }
         }
 
+        int bossHits;
+
+        /// <summary>Every BossT.HealEveryHits landed hits on a boss restore one mask.</summary>
+        void BossHitLanded()
+        {
+            if (++bossHits < BossT.HealEveryHits) return;
+            bossHits = 0;
+            if (Player.Health >= Player.MaxHealth || Player.Health <= 0) return;
+            Player.Health++;
+            Emit(GameEventType.PlayerHealed, Player.Body.Pos, Player.Health);
+        }
+
         void ResolveDamage()
         {
             if (Player.Invuln > 0f || Phase != Phase.Playing) return;
@@ -408,8 +422,8 @@ namespace DrownedBell.Core
             foreach (Enemy e in Foes)
             {
                 if (e.Room != Room || !e.Alive) continue;
-                if (e.Harmful && pb.Overlaps(e.Body.Box)) { HurtPlayer(e.Body.Pos.X); return; }
-                if (e.TryAttackBox(out Aabb box) && pb.Overlaps(box)) { HurtPlayer(e.Body.Pos.X); return; }
+                if (e.Harmful && pb.Overlaps(e.Body.Box)) { HurtPlayer(e.Body.Pos.X, e.ContactDamage); return; }
+                if (e.TryAttackBox(out Aabb box) && pb.Overlaps(box)) { HurtPlayer(e.Body.Pos.X, e.AttackDamage); return; }
                 if (e is Jelly j && j.RingHits(Player.Body.Pos)) { HurtPlayer(e.Body.Pos.X); return; }
             }
             foreach (Enemy e in Foes)
@@ -429,7 +443,7 @@ namespace DrownedBell.Core
                 }
             }
             if (ArenaRoom < 0 || Room != ArenaRoom) return;
-            if (Boss.Harmful && pb.Overlaps(Boss.Body.Box)) { HurtPlayer(Boss.Body.Pos.X); return; }
+            if (Boss.Harmful && pb.Overlaps(Boss.Body.Box)) { HurtPlayer(Boss.Body.Pos.X, BossT.ContactDamage); return; }
             if (HitByWave(Boss.Waves, pb)) return;
             foreach (Drip d in Boss.Drips)
                 if (d.Falling && pb.Overlaps(Boss.DripBox(d))) { HurtPlayer(d.X); return; }
@@ -446,10 +460,10 @@ namespace DrownedBell.Core
             return false;
         }
 
-        public void HurtPlayer(float fromX)
+        public void HurtPlayer(float fromX, int damage = 1)
         {
             if (Player.Invuln > 0f || Phase != Phase.Playing) return;
-            Player.Health -= 1;
+            Player.Health -= damage;
             Player.Hurt(fromX, Combat);
             HitStop = Combat.HitStop * 1.6f;
             Emit(GameEventType.PlayerHurt, Player.Body.Pos, Player.Health);
@@ -509,6 +523,7 @@ namespace DrownedBell.Core
         {
             Player.Place(RespawnFeet, Move);
             Player.Health = Player.MaxHealth;
+            bossHits = 0;
             foreach (Enemy e in Foes) if ((e != Warden && e != Archivist) || e.Alive) e.Reset();
             foreach (RippleBell bell in RippleBells) bell.Reset();
             if (!Boss.Dead) Boss.Reset();

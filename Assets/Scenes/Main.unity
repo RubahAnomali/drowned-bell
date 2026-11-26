@@ -207,23 +207,27 @@ MonoBehaviour:
     JellySpent: 1.3
   boss:
     Health: 26
+    ContactDamage: 2
+    HealEveryHits: 7
     IntroTime: 1.6
-    IdleTime: 0.7
-    SlamWindup: 0.8
+    IdleTime: 0.45
+    SlamWindup: 0.7
+    SlamHold: 0.35
+    SlamEcho: 0.55
     SlamRise: 2.2
     SlamDrift: 2.5
-    SlamRecover: 1.4
+    SlamRecover: 1.05
     WaveSpeed: 8
     WaveHeight: 0.9
-    RushWindup: 0.75
-    RushSpeed: 11
-    RushRecover: 1.2
-    RainWindup: 0.9
-    RainFallSpeed: 14
-    RainRecover: 1.1
+    RushWindup: 0.65
+    RushSpeed: 12
+    RushRecover: 0.95
+    RainWindup: 0.85
+    RainFallSpeed: 16
+    RainRecover: 0.95
     RainDrops: 5
-    Phase2Speed: 1.15
-    Phase2Recover: 0.8
+    Phase2Speed: 1.25
+    Phase2Recover: 0.75
   cameraSize: 9
   lookAhead: 1.4
   cameraSmoothing: 7

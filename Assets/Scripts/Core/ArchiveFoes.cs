@@ -159,9 +159,16 @@ namespace DrownedBell.Core
     /// </summary>
     public sealed class Archivist : Enemy
     {
-        public const float MarkTime = 1.0f, RecoverTime = 1.1f, HoverTime = 0.6f, DiveSpeed = 22f, RiseSpeed = 9f, HoverHeight = 7f;
+        public const float DiveSpeed = 22f, RiseSpeed = 9f, HoverHeight = 7f;
+        /// <summary>Phase two chains every third dive: a short recovery, no hover, a quick second mark.</summary>
+        public bool Chain => SecondPhase && Dives % 3 == 0 && Dives > 0;
+        public float MarkTime => Chain ? 0.5f : SecondPhase ? 0.55f : 0.7f;
+        public float RecoverTime => Chain ? 0.4f : SecondPhase ? 0.7f : 0.85f;
+        public float HoverTime => Chain ? 0.1f : 0.35f;
         public InkBeat Beat { get; private set; }
         public float Elapsed { get; private set; }
+        public override bool IsBoss => true;
+        public override int ContactDamage => 2;
         public bool Engaged => Beat != InkBeat.Dormant;
         public bool SecondPhase => Health * 2 <= MaxHealth;
         /// <summary>The two marks during Mark; RealMark is where the real body will land.</summary>
@@ -172,8 +179,9 @@ namespace DrownedBell.Core
         public int Dives { get; private set; }
         public readonly List<Shockwave> Waves = new List<Shockwave>(4);
         float echoIn = -1f;
+        int echoLeft;
 
-        public Archivist(int id, Vec2 feet, int room) : base(id, EnemyKind.Archivist, feet, room, 2.2f, 2.4f, 12)
+        public Archivist(int id, Vec2 feet, int room) : base(id, EnemyKind.Archivist, feet, room, 2.2f, 2.4f, 20)
         {
             DropAt = feet;
         }
@@ -203,6 +211,7 @@ namespace DrownedBell.Core
             bool before = SecondPhase;
             bool hit = base.TakeHit(w, swingId, damage, fromX);
             if (hit && !before && SecondPhase && Alive) w.Emit(GameEventType.ArchivistPhase2, Body.Pos, Id);
+            // (SecondPhase is Health*2 <= MaxHealth, so it flips on the hit that crosses half.)
             if (hit && !Alive)
             {
                 Waves.Clear();
@@ -230,6 +239,7 @@ namespace DrownedBell.Core
                 Waves.Add(new Shockwave { X = DropAt.X - Body.Half.X, FloorY = DropAt.Y, Dir = -1 });
                 Waves.Add(new Shockwave { X = DropAt.X + Body.Half.X, FloorY = DropAt.Y, Dir = 1 });
                 w.Emit(GameEventType.WidowRing, DropAt, Id);
+                if (--echoLeft > 0) echoIn = RippleBell.EchoDelay;
             }
             switch (Beat)
             {
@@ -283,7 +293,10 @@ namespace DrownedBell.Core
                         Dives++;
                         Enter(InkBeat.Recover);
                         w.Emit(GameEventType.ArchivistLand, RealMark, Id);
-                        if (SecondPhase) echoIn = RippleBell.EchoDelay;
+                        // Every landing sends a ripple pair shortly after (0.45 s; 0.3 s below half health: time for one swing),
+                        // and below half health an echo pair follows 0.75 s later.
+                        echoIn = SecondPhase ? 0.3f : 0.45f;
+                        echoLeft = SecondPhase ? 2 : 1;
                     }
                     else Body.Pos = new Vec2(Body.Pos.X, y);
                     break;

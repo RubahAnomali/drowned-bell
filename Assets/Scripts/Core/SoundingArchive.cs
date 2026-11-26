@@ -43,6 +43,9 @@ namespace DrownedBell.Core
 
         // ---- input-only route, for the headless checks and the standalone QA pilot ----------------------------
 
+        /// <summary>Seconds of input lag the scripted diver is playing with; it reacts that much earlier (see SluiceWorks.Lead).</summary>
+        public static float Lead;
+
         public static readonly Vec2 StackFoot = new Vec2(68.5f, 2f);
         const float LoftFloor = 20f;
 
@@ -58,7 +61,7 @@ namespace DrownedBell.Core
                     // Time until the wave's front edge meets the diver, counting the diver's own run towards it.
                     float gap = (b.Pos.X - s.X) * s.Dir - b.Half.X - 0.4f;
                     float closing = w.BossT.WaveSpeed - b.Vel.X * s.Dir;
-                    if (gap > -0.8f && gap < closing * 0.1f) return true;
+                    if (gap > -0.8f && gap < closing * (0.1f + Lead)) return true;
                 }
                 return false;
             }
@@ -122,11 +125,24 @@ namespace DrownedBell.Core
                     if (!ar.Alive) { if (!w.OrderTaken) target = ar.DropAt.X; continue; }
                     if (ar.Beat == InkBeat.Mark || ar.Beat == InkBeat.Dive)
                     {
-                        float away = feet.X >= ar.RealMark.X ? 1f : -1f;
-                        if (feet.X + away * 3f > r.MaxX - 2f || feet.X + away * 3f < r.MinX + 3f) away = -away;
-                        target = System.MathF.Abs(feet.X - ar.RealMark.X) < 2.8f ? ar.RealMark.X + away * 3.2f : feet.X;
+                        // Clear of the real mark by three tiles, on whichever side is nearest and inside the room.
+                        float lo = r.MinX + 1.5f, hi = r.MaxX - 1.5f, best = feet.X, bestCost = float.PositiveInfinity;
+                        if (System.MathF.Abs(feet.X - ar.RealMark.X) < 2.8f)
+                            foreach (float side in new[] { -3.2f, 3.2f })
+                            {
+                                float cx = ar.RealMark.X + side;
+                                if (cx < lo || cx > hi) continue;
+                                float cost = System.MathF.Abs(cx - feet.X);
+                                if (cost < bestCost) { bestCost = cost; best = cx; }
+                            }
+                        target = best;
                     }
-                    else if (ar.Beat == InkBeat.Recover) target = ar.Body.Pos.X + (feet.X < ar.Body.Pos.X ? -1.6f : 1.6f);
+                    else if (ar.Beat == InkBeat.Recover)
+                    {
+                        // Punish from the side that faces the middle of the room, so the next mark never pins the diver to a wall.
+                        float centre = (r.MinX + r.MaxX) * 0.5f;
+                        target = ar.Body.Pos.X + (centre >= ar.Body.Pos.X ? 2.5f : -2.5f);
+                    }
                     else if (ar.Engaged) target = feet.X;
                 }
             }

@@ -264,6 +264,7 @@ namespace DrownedBell.Game
                 case GameEventType.ArchivistPhase2: AddTrauma(0.55f); fx.Ring(p, Palette.Warm, 6f, 0.8f); break;
                 case GameEventType.ArchivistDefeated: Impact(p, Palette.BellRim, 0.9f, 34); fx.Ring(p, Palette.Warm, 10f, 2f); break;
                 case GameEventType.MothLodged: fx.Burst(p, Palette.A(Palette.RockEdge, 0.7f), 6, 2.5f, 0.12f, 6f, 0.5f); break;
+                case GameEventType.PlayerHealed: fx.Ring(new Vector2(p.x, p.y + 0.5f), Palette.Warm, 1.8f, 0.5f); fx.Burst(p, Palette.Warm, 10, 3f, 0.1f, -1f); break;
                 case GameEventType.ChuteRide: fx.Ring(p, Palette.Warm, 2f, 0.5f); camPos = Target(true); break;
                 case GameEventType.LungTaken:
                     fx.Ring(p, Palette.Warm, 2.5f, 0.6f);

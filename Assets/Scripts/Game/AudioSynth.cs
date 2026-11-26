@@ -71,6 +71,7 @@ namespace DrownedBell.Game
             clips[GameEventType.MachineBrace] = Clicks("ratchet", 0.65f, 4, 0.18f);
             clips[GameEventType.PipeWarning] = Sweep("whistle", 0.80f, 390f, 710f, 0.12f);
             clips[GameEventType.PumpSurge] = Noise("pressure relief", 0.75f, 0.32f, 790f);
+            clips[GameEventType.PlayerHealed] = Chord("mend", 0.7f, new[] { 523f, 659f, 784f }, 0.16f);
             // Sounding Archive: each tell has its own sound so it reads with the screen hidden.
             clips[GameEventType.MothMark] = Sweep("moth fold", 0.5f, 900f, 1500f, 0.1f);
             clips[GameEventType.MothDive] = Whoosh("moth dive", 0.3f, 0.35f);

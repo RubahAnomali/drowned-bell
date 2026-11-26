@@ -53,6 +53,10 @@ namespace DrownedBell.Core
         readonly Vec2 home;
         int lastSwing = -1;
         float riseFromY;
+        float slamHold, echoIn = -1f;
+        int comboLeft;
+        Vec2 slamAt;
+        float slamFloor;
 
         static readonly Dictionary<BossState, BossState[]> Allowed = new Dictionary<BossState, BossState[]>
         {
@@ -117,6 +121,9 @@ namespace DrownedBell.Core
             Phase2 = false;
             AttackCount = 0;
             lastSwing = -1;
+            slamHold = 0f;
+            echoIn = -1f;
+            comboLeft = 0;
             Waves.Clear();
             Drips.Clear();
             Fsm.Reset();
@@ -143,6 +150,7 @@ namespace DrownedBell.Core
             {
                 Health = 0;
                 Fsm.Go(BossState.Dead);
+                echoIn = -1f;
                 Waves.Clear();
                 Drips.Clear();
                 w.Emit(GameEventType.BossDefeated, Body.Pos, 0);
@@ -174,7 +182,7 @@ namespace DrownedBell.Core
                 case BossState.Idle:
                     Facing = dx >= 0f ? 1 : -1;
                     Body.Vel.X = Mathx.MoveToward(Body.Vel.X, 0f, 30f * dt);
-                    if (Fsm.Time >= t.IdleTime / Speed) ChooseAttack(w, dx);
+                    if (Fsm.Time >= (comboLeft > 0 ? 0.1f : t.IdleTime / Speed)) ChooseAttack(w, dx);
                     break;
                 case BossState.SlamWindup:
                 {
@@ -182,6 +190,8 @@ namespace DrownedBell.Core
                     gravity = false;
                     float k = WindupProgress;
                     Body.Pos.Y = riseFromY + t.SlamRise * (1f - (1f - k) * (1f - k));
+                    // A delayed slam hangs at the top: after the rise it holds still, then drops.
+                    if (k >= 1f && slamHold > 0f) { Body.Vel = new Vec2(0f, 0f); if (Fsm.Time < t.SlamWindup / Speed + slamHold) break; }
                     // It follows only during the first 70% of the wind-up, then commits: the landing spot is
                     // readable, and the shockwave starts far enough away to react to.
                     float drift = k < 0.7f ? Mathx.Clamp(dx * 2f, -t.SlamDrift, t.SlamDrift) * Speed : 0f;
@@ -200,6 +210,9 @@ namespace DrownedBell.Core
                         float floor = Body.Bottom;
                         Waves.Add(new Shockwave { X = Body.Pos.X - Body.Half.X, Dir = -1, FloorY = floor });
                         Waves.Add(new Shockwave { X = Body.Pos.X + Body.Half.X, Dir = 1, FloorY = floor });
+                        slamAt = Body.Pos;
+                        slamFloor = floor;
+                        if (Phase2) echoIn = t.SlamEcho;
                         Fsm.Go(BossState.SlamRecover);
                         w.Emit(GameEventType.BossSlam, Body.Feet, 0);
                     }
@@ -222,7 +235,12 @@ namespace DrownedBell.Core
                     break;
                 case BossState.RushRecover:
                     Body.Vel.X = Mathx.MoveToward(Body.Vel.X, 0f, 40f * dt);
-                    if (Fsm.Time >= t.RushRecover * RecoverMul) Fsm.Go(BossState.Idle);
+                    if (Fsm.Time >= t.RushRecover * RecoverMul)
+                    {
+                        // Phase two chains a slam straight out of a rush, with no idle beat.
+                        if (Phase2) comboLeft = 1;
+                        Fsm.Go(BossState.Idle);
+                    }
                     break;
                 case BossState.RainWindup:
                     Body.Vel.X = 0f;
@@ -255,13 +273,16 @@ namespace DrownedBell.Core
         void ChooseAttack(World w, float dx)
         {
             AttackCount++;
-            if (Phase2 && AttackCount % 3 == 0)
+            bool combo = comboLeft > 0;
+            comboLeft = 0;
+            slamHold = AttackCount % 4 == 2 ? t.SlamHold : 0f;
+            if (Phase2 && AttackCount % 3 == 0 && !combo)
             {
                 Fsm.Go(BossState.RainWindup);
                 SpawnDrips(w);
                 w.Emit(GameEventType.BossRainWarn, Body.Pos, 0);
             }
-            else if (MathF.Abs(dx) > 6f)
+            else if (MathF.Abs(dx) > 6f && !combo)
             {
                 Fsm.Go(BossState.RushWindup);
                 w.Emit(GameEventType.BossRushWindup, Body.Pos, Facing);
@@ -293,6 +314,12 @@ namespace DrownedBell.Core
         void UpdateHazards(World w, float dt)
         {
             Level lv = w.Level;
+            if (echoIn >= 0f && (echoIn -= dt) < 0f)
+            {
+                Waves.Add(new Shockwave { X = slamAt.X - Body.Half.X, Dir = -1, FloorY = slamFloor });
+                Waves.Add(new Shockwave { X = slamAt.X + Body.Half.X, Dir = 1, FloorY = slamFloor });
+                w.Emit(GameEventType.RippleToll, new Vec2(slamAt.X, slamFloor));
+            }
             for (int i = Waves.Count - 1; i >= 0; i--)
             {
                 Shockwave s = Waves[i];

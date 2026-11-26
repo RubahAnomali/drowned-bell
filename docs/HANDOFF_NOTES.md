@@ -1,5 +1,9 @@
 # Drowned Bell handoff notes
 
+## Harder bosses, 27 November 2026 (v0.5)
+
+The three bosses are hardened; read `docs/BOSS_DESIGN.md` first. Tuning: `BossTuning` (and `Main.unity`, which `SceneTuning` keeps equal to the code) for the Undertoll; constants and properties in `PumpMachinery.cs` for the Warden and `ArchiveFoes.cs` for the Archivist. Damage: `Enemy.ContactDamage` and `AttackDamage`, `BossTuning.ContactDamage`; healing: `World.BossHitLanded` and `BossTuning.HealEveryHits`. The scripted divers got smarter: `Autopilot.BossFight` (crosses a recovering bell, never ends a recovery inside it), `SluiceWorks.WardenTactic`, and the Archivist branch of `SoundingArchive.RouteInput`. `BossDesignChecks.cs` holds the hard/fair rules and `BossDifficulty.cs` the reader/greedy/idle fights. Art is unaffected: lanes draw from `AttackLane`, so the wide and tracked jets already show.
+
 ## Sounding Archive mechanics, 27 November 2026 (v0.4)
 
 Chapter III is playable end to end with placeholder shapes. Map: `tools/archive_rooms.py` generates `Core/ArchiveData.cs`; `Core/SoundingArchive.cs` holds the builder, stations (records, keys, order, chute rides) and the input-only `RouteInput`. Foes: `Core/ArchiveFoes.cs` (InkMoth, TuningWidow, Archivist); echo drums are `RippleBell` with `Echo`/`Harmless` ('O' live, 'o' practice). `Level.Chapter` now identifies the chapter; `Tile.KeyDoor` ('K') opens with the drum key. The Pump Warden's victory continues into the Archive (`World.EnterArchive`) and saves its start; finishing the Archive clears the save. Visuals: `Game/ArchiveFoeView.cs` and the `PLACEHOLDER` sprites in `LevelView.cs`; the art pass is specified in `docs/ARCHIVE_ART_BRIEF.md` and is being handed to another agent. Debug: `ARCHIVE_TRACE=1 dotnet run` prints the route. Next mechanics per the plan: Tidal Engine (chapter IV).

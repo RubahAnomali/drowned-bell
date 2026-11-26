@@ -42,6 +42,7 @@ internal static class Program
         if (Environment.GetEnvironmentVariable("BOSS_TRACE") == "1") { BossTrace.Run(); return 0; }
         if (Environment.GetEnvironmentVariable("ROUTE_TRACE") == "1") { RouteTrace.Run(); return 0; }
         if (Environment.GetEnvironmentVariable("ARCHIVE_TRACE") == "1") { ArchiveTrace.Run(); return 0; }
+        if (Environment.GetEnvironmentVariable("DIFFICULTY_TABLE") == "1") { BossDifficulty.Table(); return 0; }
         SceneTuning.Check(Ok);
         Movement();
         MouseAim();
@@ -56,6 +57,7 @@ internal static class Program
         RunState();
         SaveChecks();
         ArchiveChecks.Run(Ok);
+        BossDesignChecks.Run(Ok);
         Route();
         LevelPlanChecks.Run(Ok);
         Pilot();
@@ -111,7 +113,7 @@ internal static class Program
                         w.Player.Place(new Vec2(machine.Home.X + 2, machine.Body.Bottom), w.Move);
                 }
                 if (machine.Beat == MachineBeat.Strike)
-                    struck |= warned && machine.Facing == -1 && machine.TryAttackBox(out Aabb lane) && lane.MaxX < machine.Home.X;
+                    struck |= warned && machine.Facing == -1 && machine.TryAttackBox(out Aabb lane) && lane.MaxX <= machine.Home.X + 1e-3f;
                 if (machine.Beat == MachineBeat.Recover)
                 {
                     recovered = !machine.TryAttackBox(out _) && machine.TakeHit(w, 1, 1, machine.Home.X - 2);
@@ -133,7 +135,7 @@ internal static class Program
             if (boss.Beat == MachineBeat.Jet && boss.Beat != previous) lanes.Add(boss.Lane);
             previous = boss.Beat;
         }
-        Ok(lanes.Count == 2 && lanes[0] != lanes[1], "overpressure vents two different lanes before the sweep");
+        Ok(lanes.Count == 4 && lanes.Zip(lanes.Skip(1), (x, y) => x != y).All(d => d), "overpressure vents four different pulses in a row before the sweep");
         w.Respawn();
         Ok(!boss.Engaged && boss.Health == boss.MaxHealth && !w.Level.DoorsLocked, "an unfinished Warden resets and releases the arena on respawn");
 

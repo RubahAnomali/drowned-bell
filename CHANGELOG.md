@@ -5,6 +5,18 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.5 (harder bosses)
+
+- All three bosses hardened to Dark Souls difficulty, and kept fair: heavy hits (a boss body hit costs 2 of 5 masks),
+  delayed swings, combos, tracked attacks, no safe range and no safe hugging. See docs/BOSS_DESIGN.md.
+- Undertoll: 26 hits, shorter beats, delayed slams, a second wave pair and slam-out-of-rush combos in phase two.
+- Pump Warden: 22 hits, three or four pulses in a row, a tracked jet, double-pipe jets, and a sweep that alternates a
+  quick and a delayed brace and starts at its own centre.
+- Archivist: 20 hits, ripples after every landing, echo pairs and chained dives in phase two, 2-mask dives.
+- Every 7 hook hits on a boss mend one mask (never from ordinary enemies).
+- 26 new headless checks pin the hard parts, the fairness rules (telegraph at least 0.45 s, punish window at least
+  0.35 s) and a difficulty envelope: a flawless reader wins, a greedy or idle diver is punished.
+
 ## v0.4 (Sounding Archive mechanics, placeholder art)
 
 - Chapter III, the Sounding Archive, follows the Pump Warden: Receiving Desk (green lamp, harmless practice
