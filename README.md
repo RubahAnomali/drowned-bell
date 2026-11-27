@@ -1,6 +1,6 @@
 # Drowned Bell
 
-A short 2D side-scrolling action demo in Unity. A small salvage diver climbs down a flooded bell tower to silence **the Undertoll**, the great bell whose tolling keeps drowning the lower halls. Responsive movement, close-range hook combat, readable enemy tells, two seven-room chapters and two bosses. The full four-area design is in [the campaign plan](docs/CAMPAIGN_PLAN.md).
+A short 2D side-scrolling action demo in Unity. A small salvage diver climbs down a flooded bell tower to silence **the Undertoll**, the great bell whose tolling keeps drowning the lower halls. Responsive movement, close-range hook combat, readable enemy tells, four chapters (the Belfry, the Sluice Works, the Sounding Archive and the Tidal Engine) and four bosses that attack in a random order. The full four-area design is in [the campaign plan](docs/CAMPAIGN_PLAN.md).
 
 The diver, enemies, landmarks and room tiles use original code-authored pixel art. The title and ending share a 24-color belfry illustration. Sound is synthesized in code. The game renders at 512×288 and scales to the window with nearest-neighbor filtering.
 
@@ -83,6 +83,7 @@ The boss chooses deterministically: it rushes when you are far, slams when you a
 - Five masks of health, six with the Brass Lung. A swing can only damage a given enemy once. After a hit you are invulnerable for 1.1 s and knocked away.
 - **Spikes** cost a mask and put you back on the last safe ground.
 - **Death** returns you to the lit tide lamp at full health. Ordinary enemies and an unfinished boss fight reset. **The opened grate, the lit lamp and the Brass Lung stay** for the rest of the run.
+- The Tidal Engine (chapter IV) follows the Archive: throw the two governor latches (one in the Flywheel Cradle behind a Ballast Knight, one on the Condenser Bridge), take the lift back to the dock, defeat the Tidekeeper in the Sea Gate (strike its hinge while it resets) and turn the bypass wheel. The optional Night Watch under the bridge holds the third keeper record behind three spring pads. Walk out through the Morning Nave to finish; the completion screen shows the keepers you found.
 - Beating the bell opens the Sluice Works interlude. Press Enter or click to continue with the same upgrade, elapsed time and death count. A new lamp marks the start of the Works. Follow the pressure main through Intake Dock, Bleeder Gallery and Valve Hall. Strike the wheel to enter Impeller Well. Jump the drain for the direct route or drop to Sediment Trap for the keeper record. W or Up rides the maintenance lift. Beyond Counterweight Walk, evade the Pump Warden’s marked relief pipe and piston sweep. Strike its open brass housing during retraction. Pick up its key and walk to the eastern hatch to finish chapter two. Progress lasts one session.
 
 ## Tuning

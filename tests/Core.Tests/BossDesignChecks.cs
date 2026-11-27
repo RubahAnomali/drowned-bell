@@ -195,6 +195,7 @@ internal static class BossDesignChecks
             ("Undertoll", (s, cap, deaths) => BossDifficulty.Undertoll(closed, open, s, cap, deaths)),
             ("Pump Warden", (s, cap, deaths) => BossDifficulty.Warden(s, cap, deaths)),
             ("Archivist", (s, cap, deaths) => BossDifficulty.Archivist(s, cap, deaths)),
+            ("Tidekeeper", (s, cap, deaths) => BossDifficulty.Tidekeeper(s, cap, deaths)),
         })
         {
             var reader = run(BossDifficulty.Style.Reader, 420f, 6);

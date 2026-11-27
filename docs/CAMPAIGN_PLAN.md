@@ -4,7 +4,7 @@
 
 Silencing the Undertoll opens a way below the belfry. The diver follows the pressure mains through the Sluice Works, learns who ordered the flood in the drowned signal archive, and reaches the tidal engine before the next high tide. The final action is to reverse the sea gate and walk out into the drained nave.
 
-Design target for a first-time player: 55–80 minutes over four connected chapters, including exploration and retries. This is a target for playtesting. The current Windows slice contains all seven Belfry rooms and all seven Sluice rooms. The other rooms, enemies, bosses, persistent saves and ending below are production work still to do.
+Design target for a first-time player: 55–80 minutes over four connected chapters, including exploration and retries. This is a target for playtesting. The playable Windows campaign (v0.8) covers all four chapters: the Belfry, the Sluice Works, the six-room Sounding Archive and the seven-room Tidal Engine, with chapter saves, the dawn ending and the credits.
 
 Keep one move set throughout: run, jump, dash, directional hook and pogo. Upgrades are optional. Every required rise stays at or below two tiles and every mandatory gap at or below three, against the measured 3.26-tile rise, 5.33-tile running reach and 7.78-tile jump-dash. Reserve demanding combinations for optional routes with a safe return. Use the existing 512 by 288 camera, 16 pixels per tile and bitmap UI.
 
@@ -26,7 +26,7 @@ Belfry Landing teaches controls and establishes the checkpoint lamp. Flooded Nav
 | Counterweight Walk | Bait a Chain Porter into throwing across a safe recess, then cross during its rewind. | Release the lift beside the local lamp |
 | Duty Pump | Read the relief cycle while fighting the Pump Warden. | Pump key and the eastern archive hatch, the current build ending |
 
-### III. Sounding Archive · 15–20 minutes · mechanics playable, placeholder art (v0.4)
+### III. Sounding Archive · 15–20 minutes · playable with the Archive pixel-art set
 
 | Room | Player task and route purpose | Exit or reward |
 |---|---|---|
@@ -37,7 +37,7 @@ Belfry Landing teaches controls and establishes the checkpoint lamp. Flooded Nav
 | Return Chute | Slide the gridded counterweight to open the lamp shortcut. Mix one moth with one echo source in a wider room. | Choir antechamber |
 | Recording Choir | Distinguish the Archivist's real body by its moving clapper. | Original sea-gate order and engine-room access |
 
-### IV. Tidal Engine · 15–25 minutes · planned
+### IV. Tidal Engine · 15–25 minutes · playable (v0.8)
 
 | Room | Player task and route purpose | Exit or reward |
 |---|---|---|

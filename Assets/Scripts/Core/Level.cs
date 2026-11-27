@@ -38,6 +38,10 @@ namespace DrownedBell.Core
         public Chapter Chapter = Chapter.Belfry;
         public Vec2 PlayerStart, Checkpoint, Lever, Heart, BossSpawn;
         public Vec2? Record, LiftLamp;
+        /// <summary>Tidal Engine fixtures: the governor latches ('Y'), the bypass wheel ('X'), the dock model ('d'), the stair lift stop ('F') and the spring pads ('S').</summary>
+        public Vec2? Wheel, DockModel, StairLift;
+        public readonly List<Vec2> Latches = new List<Vec2>();
+        public readonly List<Vec2> Pads = new List<Vec2>();
         public Vec2? Outlet { get; private set; }
         public bool HasHeart { get; private set; }
         public readonly List<Vec2> Vents = new List<Vec2>();
@@ -95,9 +99,16 @@ namespace DrownedBell.Core
                         case 'A': lv.LiftLamp = at; break;
                         case 'V': lv.Vents.Add(at); break;
                         case 'E': lv.Outlet = at; break;
+                        case 'Y': lv.Latches.Add(at); break;
+                        case 'X': lv.Wheel = at; break;
+                        case 'd': lv.DockModel = at; break;
+                        case 'F': lv.StairLift = at; break;
+                        case 'S': lv.Pads.Add(at); break;
                         case 'B': lv.BossSpawn = at; lv.HasBoss = true; break;
                         case 'b': lv.Landmarks.Add(at); break;
                         case 'a': lv.ArchLamps.Add(at); break;
+                        case 'N':
+                        case 'U':
                         case 'm':
                         case 'w':
                         case 'Z':

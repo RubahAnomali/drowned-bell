@@ -243,6 +243,61 @@ namespace DrownedBell.Game
                     yield return new WaitForSecondsRealtime(2f);
                     yield return Capture("archive_victory_screen");
                     game.ContinueJourney();
+
+                    // Chapter IV: the Tidal Engine, played by the same input-only route the headless checks use.
+                    World engine = game.CurrentWorld;
+                    // The optional Night Watch first: the pad route crosses the three spring pads to the keeper's record.
+                    RoomInfo watch = engine.Level.Rooms[3];
+                    engine.Player.Place(new Vec2(watch.MinX + 4f, engine.Level.FloorBelow(watch.MinX + 4f, watch.MinY + 6f)), engine.Move);
+                    game.SetPilot(() => TidalEngine.PadRoute(engine));
+                    yield return new WaitForSecondsRealtime(1.2f);
+                    yield return Capture("engine_watch_start");
+                    float watchDeadline = Time.realtimeSinceStartup + 40f;
+                    while (!engine.EngineRecord && Time.realtimeSinceStartup < watchDeadline) yield return null;
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    yield return Capture("engine_watch_record");
+                    report.Add("Night Watch: record " + engine.EngineRecord + ", campaign time " + engine.Time.ToString("0.0"));
+                    if (!engine.EngineRecord) errors.Add("Night Watch record unreachable");
+                    engine.Player.Place(engine.RespawnFeet, engine.Move);
+                    game.SetPilot(() => TidalEngine.RouteInput(engine));
+                    var engineBeats = new HashSet<string>();
+                    int engineRoom = -1;
+                    engine.Event += e =>
+                    {
+                        if (e.Type == GameEventType.GovernorLatch) Shot("engine_latch_" + e.Id);
+                        else if (e.Type == GameEventType.TideReversed) Shot("engine_tide_reversed");
+                        else if (e.Type == GameEventType.TidekeeperAwake) Shot("engine_keeper_awake");
+                        else if (e.Type == GameEventType.TidekeeperPhase2) Shot("engine_keeper_phase2");
+                        else if (e.Type == GameEventType.TidekeeperDefeated) Shot("engine_keeper_defeated");
+                        else if (e.Type == GameEventType.DockModelSeen) Shot("engine_model");
+                        else if (e.Type == GameEventType.RestLampLit) Shot("engine_rest_lamp");
+                    };
+                    float engineDeadline = Time.realtimeSinceStartup + 240f;
+                    float lampNotice = -1f;
+                    while (engine.Phase != Phase.Victory && Time.realtimeSinceStartup < engineDeadline)
+                    {
+                        if (engineRoom != engine.Room) { engineRoom = engine.Room; yield return Capture("engine_room_" + engineRoom); }
+                        if (lampNotice < 0f && engine.LampLit) lampNotice = Time.realtimeSinceStartup + 0.9f;
+                        if (lampNotice > 0f && Time.realtimeSinceStartup > lampNotice) { lampNotice = float.MaxValue; yield return Capture("engine_lamp_notice"); }
+                        foreach (Enemy foe in engine.Foes)
+                        {
+                            if (foe.Room != engine.Room || !foe.Alive) continue;
+                            string beat = foe is Tidekeeper tk && tk.Engaged ? "keeper_" + tk.StateName.Replace(' ', '_') + (tk.SecondPhase ? "_phase2" : "")
+                                : foe is PumpMachine km && km.Kind == EnemyKind.Knight && km.Beat != MachineBeat.Idle ? "knight_" + km.Beat : null;
+                            if (beat != null && engineBeats.Add(beat)) yield return Capture("engine_" + beat);
+                        }
+                        yield return null;
+                    }
+                    report.Add("Tidal Engine: " + engine.Phase + ", latches " + engine.LatchOpen[0] + "/" + engine.LatchOpen[1] + ", record " + engine.EngineRecord +
+                        ", tide reversed " + engine.TideReversed + ", rest lamp " + engine.RestLit + ", total deaths " + engine.Deaths + ", campaign time " + engine.Time.ToString("0.0"));
+                    if (engine.Phase != Phase.Victory) { errors.Add("Engine exit unreachable"); break; }
+                    yield return new WaitForSecondsRealtime(2f);
+                    yield return Capture("engine_completion");
+                    game.TourCredits(true);
+                    yield return new WaitForSecondsRealtime(0.6f);
+                    yield return Capture("engine_credits");
+                    game.TourCredits(false);
+                    game.ContinueJourney();
                     yield return new WaitForSecondsRealtime(1.5f);
                     World fresh = game.CurrentWorld;
                     report.Add("dive again: new run time " + fresh.Time.ToString("0.0") + "s, deaths " + fresh.Deaths + ", lamp " + fresh.LampLit + ", grate " + fresh.GrateOpen + ", lung " + fresh.LungTaken +

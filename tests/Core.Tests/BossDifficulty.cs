@@ -108,6 +108,19 @@ internal static class BossDifficulty
     }
 
     /// <summary>The reader and the greedy diver against several run seeds: random fights must stay beatable and stay punishing for every order.</summary>
+    public static Result Tidekeeper(Style style, float cap = 600f, int maxDeaths = 12, int seed = World.DefaultSeed)
+    {
+        var w = new World(level: TidalEngine.Build(), seed: seed);
+        w.Player.Place(w.Level.Checkpoint, w.Move);
+        w.Update(Dt, default);
+        RoomInfo room = w.Level.Rooms[w.Tidekeeper.Room];
+        float startX = style == Style.Idle ? w.Tidekeeper.Home.X - 6f : room.MinX + 8f;
+        w.Player.Place(new Vec2(startX, w.Level.FloorBelow(startX, room.MinY + 6f)), w.Move);
+        Func<PlayerInput> router = style == Style.Reader ? () => TidalEngine.RouteInput(w)
+            : style == Style.Greedy ? () => Greedy(w, w.Tidekeeper.Home.X) : () => default;
+        return Trial(w, router, () => !w.Tidekeeper.Alive, cap, maxDeaths, new Vec2(startX, room.MinY + 6f));
+    }
+
     public static void SeedTable(int seeds = 8)
     {
         var closed = new NavGraph(false);
@@ -117,6 +130,7 @@ internal static class BossDifficulty
             ("Undertoll", (s, seed) => Undertoll(closed, open, s, 420f, 8, seed)),
             ("Pump Warden", (s, seed) => Warden(s, 420f, 8, seed)),
             ("Archivist", (s, seed) => Archivist(s, 420f, 8, seed)),
+            ("Tidekeeper", (s, seed) => Tidekeeper(s, 420f, 8, seed)),
         })
         {
             var readers = new List<Result>();
@@ -139,7 +153,7 @@ internal static class BossDifficulty
         string only = Environment.GetEnvironmentVariable("DIFFICULTY_ONLY");
         foreach (var (name, run) in new (string, Func<Style, Result>)[]
         {
-            ("Undertoll", s => Undertoll(closed, open, s)), ("Pump Warden", s => Warden(s)), ("Archivist", s => Archivist(s)),
+            ("Undertoll", s => Undertoll(closed, open, s)), ("Pump Warden", s => Warden(s)), ("Archivist", s => Archivist(s)), ("Tidekeeper", s => Tidekeeper(s)),
         })
             foreach (Style s in Enum.GetValues(typeof(Style)))
                 if (only == null || name.StartsWith(only)) Console.WriteLine($"{name,-12} {s,-7} {run(s)}");

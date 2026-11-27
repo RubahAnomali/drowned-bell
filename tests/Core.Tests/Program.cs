@@ -42,6 +42,8 @@ internal static class Program
         if (Environment.GetEnvironmentVariable("BOSS_TRACE") == "1") { BossTrace.Run(); return 0; }
         if (Environment.GetEnvironmentVariable("ROUTE_TRACE") == "1") { RouteTrace.Run(); return 0; }
         if (Environment.GetEnvironmentVariable("ARCHIVE_TRACE") == "1") { ArchiveTrace.Run(); return 0; }
+        if (Environment.GetEnvironmentVariable("ENGINE_TRACE") == "1") { EngineChecks.Trace(); return 0; }
+        if (Environment.GetEnvironmentVariable("PAD_TRACE") == "1") { EngineChecks.PadTrace(); return 0; }
         if (Environment.GetEnvironmentVariable("DIFFICULTY_TABLE") == "1") { BossDifficulty.Table(); return 0; }
         if (Environment.GetEnvironmentVariable("DIFFICULTY_SEEDS") == "1") { BossDifficulty.SeedTable(); return 0; }
         if (Environment.GetEnvironmentVariable("DIFFICULTY_UNDERTOLL_SEED") is string us) { var r = BossDifficulty.Undertoll(new NavGraph(false), new NavGraph(true), BossDifficulty.Style.Reader, 1500f, 30, int.Parse(us)); Console.WriteLine(r); return 0; }
@@ -59,6 +61,7 @@ internal static class Program
         RunState();
         SaveChecks();
         ArchiveChecks.Run(Ok);
+        EngineChecks.Run(Ok);
         BossDesignChecks.Run(Ok);
         SmoothnessChecks.Run(Ok);
         Route();

@@ -87,6 +87,19 @@ namespace DrownedBell.Game
             clips[GameEventType.DrumKeyTaken] = Chord("drum key", 1.0f, new[] { 392f, 494f, 659f }, 0.2f);
             clips[GameEventType.OrderTaken] = Chord("order", 1.6f, new[] { 330f, 415f, 494f, 659f }, 0.22f);
             clips[GameEventType.ChuteRide] = Sweep("chute", 0.6f, 300f, 120f, 0.15f);
+            // Tidal Engine: the latches clank, the pads spring, the Tidekeeper tells every attack with its own sound.
+            clips[GameEventType.DockModelSeen] = Chord("model", 0.9f, new[] { 392f, 523f }, 0.14f);
+            clips[GameEventType.EngineRecordFound] = Chord("night watch", 1.2f, new[] { 349f, 440f, 523f }, 0.18f);
+            clips[GameEventType.PadBounce] = Mix(Sweep("spring", 0.2f, 260f, 880f, 0.14f), Noise("spring thud", 0.06f, 0.2f, 500f));
+            clips[GameEventType.GovernorLatch] = Mix(Noise("latch clank", 0.3f, 0.6f, 900f), Bell("latch ring", 0.7f, 330f, 0.3f));
+            clips[GameEventType.TideReversed] = Mix(Noise("wheel grind", 2.2f, 0.4f, 70f), Chord("tide turns", 2.4f, new[] { 262f, 330f, 392f, 523f }, 0.18f));
+            clips[GameEventType.RestLampLit] = clips[GameEventType.LampLit];
+            clips[GameEventType.TidekeeperAwake] = Bell("keeper", 2.4f, 73f, 0.65f);
+            clips[GameEventType.TidekeeperWindup] = Sweep("keeper wind", 0.7f, 120f, 240f, 0.18f);
+            clips[GameEventType.TidekeeperStrike] = Mix(Bell("keeper strike", 1.1f, 104f, 0.5f), Noise("keeper thud", 0.3f, 0.6f, 160f));
+            clips[GameEventType.TidekeeperWave] = Mix(Whoosh("crest", 0.4f, 0.35f), Noise("crest hiss", 0.3f, 0.2f, 2000f));
+            clips[GameEventType.TidekeeperPhase2] = Bell("keeper rage", 2f, 58f, 0.65f);
+            clips[GameEventType.TidekeeperDefeated] = Bell("keeper silence", 4.5f, 55f, 0.7f);
             clips[GameEventType.PumpKeyTaken] = clips[GameEventType.LungTaken];
             clips[GameEventType.GaugeFound] = clips[GameEventType.Rested];
             clips[GameEventType.LiftOnline] = clips[GameEventType.LampLit];

@@ -25,7 +25,7 @@ namespace DrownedBell.Game
             new List<(RippleBell, SpriteRenderer, SpriteRenderer, List<SpriteRenderer>)>();
         readonly List<(Vec2 Feet, SpriteRenderer Jet, SpriteRenderer Gauge)> vents =
             new List<(Vec2, SpriteRenderer, SpriteRenderer)>();
-        SpriteRenderer recordPlate, pumpKey, liftLight;
+        SpriteRenderer recordPlate, pumpKey, liftLight, drainClosed, drainOpen;
         float time;
 
         public LevelView(World w, Transform parent)
@@ -33,7 +33,11 @@ namespace DrownedBell.Game
             world = w;
             lv = w.Level;
             Root = Art.Group("Level", parent);
-            foreach (RoomInfo r in lv.Rooms) BuildRoom(r);
+            foreach (RoomInfo r in lv.Rooms)
+            {
+                if (lv.Chapter == Chapter.Engine) BuildEnginePlate(r);
+                else BuildRoom(r);
+            }
             foreach (RippleBell bell in w.RippleBells)
             {
                 Vector3 p = V(bell.Pos);
@@ -50,10 +54,22 @@ namespace DrownedBell.Game
                     rope.transform.position = p + new Vector3(0, 5f);
                     shell = Art.NewSprite("ripple bell", Art.TrainingBell, Color.white, 4, Root, 1.5f, 1.5f);
                     shell.transform.position = p;
+                    if (lv.Chapter == Chapter.Engine)
+                    {
+                        // the finished wave outlet from the Machinery sheet
+                        shell.sprite = CampaignArt.Cell("Machinery", 240, 0, 48, 48);
+                        shell.transform.localScale = Vector3.one;
+                        rope.enabled = false;
+                    }
                 }
                 var signal = Art.NewSprite("ripple floor tell", Art.Square, Palette.Wave, 5, Root, 0.25f, 0.125f);
                 signal.transform.position = new Vector3(bell.Pos.X, bell.Floor + 0.07f);
                 ripples.Add((bell, shell, signal, new List<SpriteRenderer>(2)));
+            }
+            if (lv.Chapter == Chapter.Engine)
+            {
+                BuildEngineFixtures();
+                return;
             }
             if (w.ArenaRoom < 0 && !lv.Outlet.HasValue)
             {
@@ -148,15 +164,7 @@ namespace DrownedBell.Game
 
         void BuildSluiceFixtures(Vec2 outlet)
         {
-            foreach (Vec2 feet in lv.Vents)
-            {
-                var basePlate = Art.NewSprite("slotted relief valve", PixelArt.VentPlate, Color.white, 4, Root);
-                basePlate.transform.position = V(feet) + new Vector3(0, 0.125f);
-                var jet = Art.NewSprite("pressure plume", PixelArt.SteamJet, Color.white, 6, Root);
-                var gauge = Art.NewSprite("valve indicator", Art.Square, Palette.Water, 5, Root, 0.25f, 0.125f);
-                gauge.transform.position = V(feet) + new Vector3(0, 0.1875f);
-                vents.Add((feet, jet, gauge));
-            }
+            BuildVents();
             var warden = world.Warden;
             recordPlate = Art.NewSprite("keeper gauge plate", PixelArt.GaugePlate, Color.white, 8, Root);
             recordPlate.transform.position = V(lv.Record.Value) + new Vector3(0, 0.55f);
@@ -179,6 +187,12 @@ namespace DrownedBell.Game
             liftLight.transform.position = V(lv.LiftLamp.Value) + new Vector3(0, 15f / 16f);
             var impeller = Art.NewSprite("dry impeller", Art.Ring, Palette.RockSide, -10, Root, 8, 8);
             impeller.transform.position = V(SluiceWorks.WellStop) + new Vector3(-8, 6);
+            // The finished impeller hub sits in the middle of the big vanes, and the bypass drain shows whether it is open.
+            var hub = Art.NewSprite("impeller hub", CampaignArt.Cell("Machinery", 0, 0, 48, 48), Color.white, -8, Root);
+            hub.transform.position = impeller.transform.position;
+            drainClosed = Art.NewSprite("bypass drain, closed", CampaignArt.Cell("Machinery", 96, 0, 48, 48), Color.white, -3, Root);
+            drainOpen = Art.NewSprite("bypass drain, open", CampaignArt.Cell("Machinery", 144, 0, 48, 48), Color.white, -3, Root);
+            drainClosed.transform.position = drainOpen.transform.position = V(SluiceWorks.WellStop) + new Vector3(3.5f, 1.6f);
             for (int i = 0; i < 6; i++)
             {
                 float angle = i * 60f;
@@ -190,11 +204,91 @@ namespace DrownedBell.Game
             {
                 var chain = Art.NewSprite("counterweight rail", Art.Square, Palette.RockSide, -8, Root, 0.15f, 9f);
                 chain.transform.position = new Vector3(x, lv.LiftLamp.Value.Y + 11);
-                var weight = Art.NewSprite("iron counterweight", Art.Square, Palette.Pillar, -7, Root, 1.4f, 3);
+                var weight = Art.NewSprite("iron counterweight", CampaignArt.Cell("Machinery", 48, 0, 48, 48), Color.white, -7, Root);
                 weight.transform.position = chain.transform.position - new Vector3(0, 4);
             }
             var hatch = Art.NewSprite("inspection hatch", PixelArt.OutletHatch, Color.white, -1, Root, 2, 2);
             hatch.transform.position = V(outlet) + new Vector3(0, 1.5f);
+        }
+
+        void BuildVents()
+        {
+            foreach (Vec2 feet in lv.Vents)
+            {
+                var basePlate = Art.NewSprite("slotted relief valve", PixelArt.VentPlate, Color.white, 4, Root);
+                basePlate.transform.position = V(feet) + new Vector3(0, 0.125f);
+                var jet = Art.NewSprite("pressure plume", PixelArt.SteamJet, Color.white, 6, Root);
+                var gauge = Art.NewSprite("valve indicator", Art.Square, Palette.Water, 5, Root, 0.25f, 0.125f);
+                gauge.transform.position = V(feet) + new Vector3(0, 0.1875f);
+                vents.Add((feet, jet, gauge));
+            }
+        }
+
+        // ---- Chapter IV: the room plates are finished 512 x 288 paintings, one per 32 x 18 tile room ----------------
+
+        static string PlateName(string room) => room == "Service Dock" ? "Dock" : room == "Flywheel Cradle" ? "Cradle" : room == "Condenser Bridge" ? "Condenser"
+            : room == "Night Watch" ? "Watch" : room == "Governor Stair" ? "Stair" : room == "Sea Gate" ? "Gate" : "Nave";
+
+        /// <summary>Pixels the painted floor sits above the tile floor (measured on the plates): the Dock, Cradle, Condenser, Gate and Nave are painted 3 px high, the Night Watch 4 px low.</summary>
+        static int PlateShift(string room) => room == "Night Watch" ? 4 : room == "Governor Stair" ? 0 : -3;
+
+        void BuildEnginePlate(RoomInfo r)
+        {
+            var plate = Art.NewSprite("plate " + r.Name, CampaignArt.Cell(PlateName(r.Name), 0, 0, 512, 288, 0f, 0f), Color.white, -20, Root);
+            plate.transform.position = new Vector3(r.MinX, r.MinY + PlateShift(r.Name) / 16f);
+            // The plates do not paint the Night Watch hatch (a dark shaft with a stack of one-way shelves), so it is drawn here.
+            var mb = new Art.MeshBuilder();
+            for (int y = (int)r.MinY; y < (int)r.MaxY; y++)
+                for (int x = (int)r.MinX; x < (int)r.MaxX; x++)
+                {
+                    if (lv.At(x, y) == Tile.OneWay)
+                    {
+                        mb.Quad(x - 0.0f, y + 0.75f, x + 1, y + 1, Palette.LedgeUnder);
+                        mb.Quad(x, y + 0.9375f, x + 1, y + 1, Palette.Ledge);
+                    }
+                }
+            if (r.Name == "Condenser Bridge")
+            {
+                // the shaft mouth in the bridge entrance
+                mb.Quad(r.MinX + 2, r.MinY, r.MinX + 4, r.MinY + 4, Palette.RockDeep);
+            }
+            if (r.Name == "Night Watch") mb.Quad(r.MinX + 2, r.MaxY - 2, r.MinX + 4, r.MaxY, Palette.RockDeep);
+            if (mb.Count > 0) mb.Build("hatch " + r.Name, Root, -18);
+        }
+
+        SpriteRenderer latchOpen0, latchOpen1, wheelTurn, restGlow, dockGlow;
+
+        void BuildEngineFixtures()
+        {
+            BuildVents();
+            // The plates already paint the lamps, the levers, the pads, the record and the wheel. These are the changes of state.
+            for (int i = 0; i < lv.Latches.Count; i++)
+            {
+                var open = Art.NewSprite("governor latch, thrown", CampaignArt.Cell("Fittings", 144, 0, 48, 48, 0.5f, 0f), Color.white, 9, Root);
+                open.transform.position = V(lv.Latches[i]) + new Vector3(0.19f, -0.1875f);
+                if (i == 0) latchOpen0 = open; else latchOpen1 = open;
+            }
+            Vec2 wheel = lv.Wheel.Value;
+            wheelTurn = Art.NewSprite("bypass wheel", CampaignArt.Cell("Fittings", 288, 0, 48, 48, 0.5f, 0.5f), Color.white, 9, Root);
+            wheelTurn.transform.position = V(wheel) + new Vector3(0.1f, 1.45f);
+            dockGlow = Art.NewSprite("dock lamp glow", Art.Glow, Palette.WarmGlow, -5, Root, 6f, 6f);
+            dockGlow.transform.position = V(lv.Checkpoint) + new Vector3(0, 1.1f);
+            restGlow = Art.NewSprite("rest lamp glow", Art.Glow, Palette.WarmGlow, -5, Root, 6f, 6f);
+            restGlow.transform.position = V(lv.LiftLamp.Value) + new Vector3(0, 1.1f);
+        }
+
+        void TickEngine(float dt)
+        {
+            time += dt;
+            foreach (var vent in vents) DrawVent(vent);
+            TickRipples();
+            float flicker = 1f + 0.08f * Mathf.Sin(time * 11f) + 0.05f * Mathf.Sin(time * 4.3f);
+            latchOpen0.enabled = world.LatchOpen[0];
+            latchOpen1.enabled = world.LatchOpen[1];
+            dockGlow.color = Palette.A(Palette.Warm, world.LampLit ? 0.3f * flicker : 0.1f);
+            restGlow.color = Palette.A(Palette.Warm, world.RestLit ? 0.3f * flicker : 0.1f);
+            wheelTurn.enabled = true;
+            if (world.TideReversed) wheelTurn.transform.rotation = Quaternion.Euler(0, 0, -time * 40f);
         }
 
         void BuildArchiveFixtures()
@@ -210,6 +304,13 @@ namespace DrownedBell.Game
             chuteLight.transform.position = V(SoundingArchive.ChuteStop) + new Vector3(0, 1.2f);
             var exit = Art.NewSprite("engine-room exit", ArchiveArt.Prop(ArchiveProp.Exit), Color.white, -1, Root);
             exit.transform.position = V(lv.Outlet.Value) + new Vector3(0, 1.2f);
+            // The engraved pipe diagram on the Map Loft wall.
+            RoomInfo loft = lv.Rooms.Find(r => r.Name == "Map Loft");
+            if (loft != null)
+            {
+                var diagram = Art.NewSprite("engraved pipe diagram", CampaignArt.Cell("III_Pipe_diagram", 0, 0, 80, 56), Color.white, -12, Root);
+                diagram.transform.position = new Vector3(loft.MinX + 22f, loft.MinY + 9f);
+            }
         }
 
         static Vector3 V(Vec2 p) => new Vector3(p.X, p.Y);
@@ -341,6 +442,7 @@ namespace DrownedBell.Game
 
         public void Tick(float dt)
         {
+            if (lv.Chapter == Chapter.Engine) { TickEngine(dt); return; }
             if (world.ArenaRoom < 0 && !lv.Outlet.HasValue) return;
             if (ledger != null)
             {
@@ -354,37 +456,14 @@ namespace DrownedBell.Game
             time += dt;
             if (world.Warden != null)
             {
+                drainClosed.enabled = !world.BypassOpen;
+                drainOpen.enabled = world.BypassOpen;
                 recordPlate.enabled = !world.GaugeFound;
                 liftLight.enabled = world.LiftOnline;
                 pumpKey.enabled = !world.Warden.Alive && !world.PumpKey;
             }
-            foreach (var vent in vents)
-            {
-                VentState state = SluiceWorks.VentAt(world.Time, vent.Feet);
-                bool active = state == VentState.Blowing;
-                vent.Gauge.color = state == VentState.Quiet ? Palette.RockEdge : Palette.Danger;
-                vent.Jet.enabled = state != VentState.Quiet;
-                float height = active ? 3f : 0.5f;
-                vent.Jet.transform.localScale = new Vector3(active ? 1f : 0.5f, height / 3f, 1);
-                vent.Jet.transform.position = V(vent.Feet) + new Vector3(0, height * 0.5f);
-                vent.Jet.flipX = ((int)(world.Time * 7f) & 1) == 1;
-            }
-            foreach (var view in ripples)
-            {
-                float windup = view.Bell.Windup;
-                view.Shell.transform.rotation = Quaternion.Euler(0, 0, windup * 22f * Mathf.Sin(time * 17f));
-                view.Shell.color = Color.Lerp(Color.white, new Color(1f, 0.74f, 0.43f), windup);
-                view.Signal.enabled = windup > 0f;
-                view.Signal.transform.localScale = new Vector3(0.25f + windup * 2f, 0.125f, 1f);
-                while (view.Waves.Count < view.Bell.Waves.Count)
-                    view.Waves.Add(Art.NewSprite("ripple wave", Art.Dome, Palette.Wave, 26, Root));
-                for (int i = 0; i < view.Waves.Count; i++)
-                {
-                    SpriteRenderer sprite = view.Waves[i];
-                    sprite.enabled = i < view.Bell.Waves.Count;
-                    if (sprite.enabled) Art.DrawWave(sprite, view.Bell.Waves[i], world.BossT.WaveHeight, time);
-                }
-            }
+            foreach (var vent in vents) DrawVent(vent);
+            TickRipples();
             foreach (SpriteRenderer g in grate) g.enabled = !lv.GrateOpen;
             foreach (SpriteRenderer d in doors) d.enabled = lv.DoorsLocked;
 
@@ -405,6 +484,38 @@ namespace DrownedBell.Game
                 lung.transform.localPosition = V(lv.Heart) + new Vector3(0, 0.55f + 0.08f * Mathf.Sin(time * 2.4f));
             }
             foreach (SpriteRenderer a in archGlows) a.color = Palette.A(Palette.Warm, 0.3f * flicker);
+        }
+
+        void DrawVent((Vec2 Feet, SpriteRenderer Jet, SpriteRenderer Gauge) vent)
+        {
+            VentState state = SluiceWorks.VentAt(world.Time, vent.Feet);
+            bool active = state == VentState.Blowing;
+            vent.Gauge.color = state == VentState.Quiet ? Palette.RockEdge : Palette.Danger;
+            vent.Jet.enabled = state != VentState.Quiet;
+            float height = active ? 3f : 0.5f;
+            vent.Jet.transform.localScale = new Vector3(active ? 1f : 0.5f, height / 3f, 1);
+            vent.Jet.transform.position = V(vent.Feet) + new Vector3(0, height * 0.5f);
+            vent.Jet.flipX = ((int)(world.Time * 7f) & 1) == 1;
+        }
+
+        void TickRipples()
+        {
+            foreach (var view in ripples)
+            {
+                float windup = view.Bell.Windup;
+                view.Shell.transform.rotation = Quaternion.Euler(0, 0, windup * 22f * Mathf.Sin(time * 17f));
+                view.Shell.color = Color.Lerp(Color.white, new Color(1f, 0.74f, 0.43f), windup);
+                view.Signal.enabled = windup > 0f;
+                view.Signal.transform.localScale = new Vector3(0.25f + windup * 2f, 0.125f, 1f);
+                while (view.Waves.Count < view.Bell.Waves.Count)
+                    view.Waves.Add(Art.NewSprite("ripple wave", Art.Dome, Palette.Wave, 26, Root));
+                for (int i = 0; i < view.Waves.Count; i++)
+                {
+                    SpriteRenderer sprite = view.Waves[i];
+                    sprite.enabled = i < view.Bell.Waves.Count;
+                    if (sprite.enabled) Art.DrawWave(sprite, view.Bell.Waves[i], world.BossT.WaveHeight, time);
+                }
+            }
         }
     }
 }

@@ -52,6 +52,12 @@ Each boss picks its attacks at random, so a fight never shows a fixed pattern. T
 - The real mark is under the diver half the time and on the decoy spot half the time, in shuffled order.
 - Punish window 0.85 s (0.7 s in phase two).
 
+**The Tidekeeper** (56 health, hinge hits only). It stands in the Sea Gate and turns to face the diver, then locks its facing for the whole attack.
+- Four attacks in shuffled order, never the same one three times running: a **hammer** (a low sweep ahead of it, 2 masks), a **floor wave** (a crest each way along the floor), a **pressure lane** (a long jet at chest height) and an **echo** (a ripple pair, then a second pair 0.75 s later).
+- Telegraphs are 0.7 to 0.9 s (0.55 to 0.75 s in phase two); every attack ends in a reset of 0.8 s (0.65 s in phase two) in which the hinge is open. The hinge takes no hits at any other time.
+- The hammer and the lane only reach the side it faces, so passing behind it is always safe.
+- Phase two (below half health): it fights in phrases of three attacks, each phrase ending in a 0.7 s resting beat.
+
 ## Fairness rules (checked)
 
 1. Every attack has a telegraph of at least **0.45 s**. A player needs about 0.25 s to react, which leaves time to move.
@@ -69,7 +75,8 @@ Each boss picks its attacks at random, so a fight never shows a fixed pattern. T
 | Undertoll | wins 5 of 8 within 7 minutes (0 to 3 deaths, 113 to 314 s); the other three also win with more time (4, 4 and 8 deaths, 583 to 809 s) | first death at 5 to 6 s, never wins |
 | Pump Warden | wins all 8 with no deaths (66 to 81 s) | first death at 10 to 17 s, never wins |
 | Archivist | wins all 8 with no deaths (64 to 93 s) | first death at 21 to 22 s, never wins |
+| Tidekeeper | wins all 8 with no deaths (62 to 65 s) | first death at 11 to 12 s, never wins |
 
 An idle diver dies to every boss too (checked on the default seed).
 
-**What this does and does not show.** The reader is a script that knows every state exactly, so it is a no-hit ceiling, not a human: it shows each boss can be beaten on every tested order, that the Undertoll is the hardest, and that greedy play is punished. It cannot say how many tries a real first-time player will need, and it should not be read as "as hard as a specific Dark Souls boss". That needs people playing it. If real players find a boss too easy or too cruel, the numbers to move are in `BossTuning` (Undertoll), `PumpMachinery.cs` (Warden) and `ArchiveFoes.cs` (Archivist); the checks above show which rules must stay.
+**What this does and does not show.** The reader is a script that knows every state exactly, so it is a no-hit ceiling, not a human: it shows each boss can be beaten on every tested order, that the Undertoll is the hardest, and that greedy play is punished. It cannot say how many tries a real first-time player will need, and it should not be read as "as hard as a specific Dark Souls boss". That needs people playing it. If real players find a boss too easy or too cruel, the numbers to move are in `BossTuning` (Undertoll), `PumpMachinery.cs` (Warden) and `ArchiveFoes.cs` (Archivist) and `EngineFoes.cs` (Tidekeeper); the checks above show which rules must stay.

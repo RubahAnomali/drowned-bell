@@ -22,7 +22,7 @@ namespace DrownedBell.Game
         public float lookAhead = 1.4f;
         public float cameraSmoothing = 7f;
 
-        enum Flow { Title, Playing, Paused, Victory }
+        enum Flow { Title, Playing, Paused, Victory, Credits }
 
         World world;
         Transform worldRoot;
@@ -32,6 +32,7 @@ namespace DrownedBell.Game
         readonly List<JellyView> jellies = new List<JellyView>();
         readonly List<PumpMachineView> machines = new List<PumpMachineView>();
         readonly List<ArchiveFoeView> archiveFoes = new List<ArchiveFoeView>();
+        readonly List<EngineFoeView> engineFoes = new List<EngineFoeView>();
         BossView bossView;
         Fx fx;
         AudioSynth audioSynth;
@@ -39,6 +40,8 @@ namespace DrownedBell.Game
         Camera cam;
         RenderTexture pixelFrame;
         Texture2D belfry, archivePlate;
+        float noticeAt = -99f;
+        Chapter noticeChapter;
         const int PixelWidth = 512, PixelHeight = 288;
         Flow flow = Flow.Title;
         float acc, hitStop, shake, fade, bannerTime, stepClock, lookX;
@@ -172,6 +175,7 @@ namespace DrownedBell.Game
         public void TourSwing() { world.Player.Facing = 1; input.PressAttack(); }
         public void TourDebug(bool on) { debug = on; }
         public void TourPause(bool on) { flow = on ? Flow.Paused : Flow.Playing; }
+        public void TourCredits(bool on) { flow = on ? Flow.Credits : Flow.Victory; }
         void BeginTestRoom()
         {
             NewRun(testRoom: true);
@@ -195,13 +199,15 @@ namespace DrownedBell.Game
             crabs.Clear();
             machines.Clear();
             archiveFoes.Clear();
+            engineFoes.Clear();
             jellies.Clear();
             testTarget = null;
             measuringJump = measuringDash = false;
             lastJump = lastDash = "";
             foreach (Enemy e in world.Foes)
             {
-                if (e is PumpMachine m) machines.Add(new PumpMachineView(m, worldRoot));
+                if (e is Tidekeeper || (e is PumpMachine knight && knight.Kind == EnemyKind.Knight)) engineFoes.Add(new EngineFoeView(e, worldRoot));
+                else if (e is PumpMachine m) machines.Add(new PumpMachineView(m, worldRoot));
                 else if (e is InkMoth || e is TuningWidow || e is Archivist) archiveFoes.Add(new ArchiveFoeView(e, worldRoot));
                 else if (e is Crab c) crabs.Add(new CrabView(c, worldRoot));
                 else if (e is Jelly j) jellies.Add(new JellyView(j, enemies, worldRoot));
@@ -230,6 +236,8 @@ namespace DrownedBell.Game
                 case GameEventType.GaugeFound: case GameEventType.LiftOnline: case GameEventType.BypassOnline: case GameEventType.PumpKeyTaken:
                 case GameEventType.BossDefeated: case GameEventType.Respawned:
                 case GameEventType.LedgerFound: case GameEventType.DrumKeyTaken: case GameEventType.OrderTaken: case GameEventType.ArchivistDefeated:
+                case GameEventType.GovernorLatch: case GameEventType.EngineRecordFound: case GameEventType.RestLampLit: case GameEventType.TideReversed:
+                case GameEventType.TidekeeperDefeated:
                     Save();
                     break;
                 case GameEventType.EnemyKilled:
@@ -238,7 +246,7 @@ namespace DrownedBell.Game
                 case GameEventType.Victory:
                     // The end of the current build: the next dive starts fresh, so there is nothing to continue.
                     // Earlier chapters save the start of the next one (World.Snapshot handles that).
-                    if (world.Chapter == Chapter.Archive && !automatedTour) { SaveStore.Clear(); save = null; }
+                    if (world.Chapter == Chapter.Engine && !automatedTour) { SaveStore.Clear(); save = null; }
                     else Save();
                     break;
             }
@@ -260,6 +268,8 @@ namespace DrownedBell.Game
                 case GameEventType.PlayerDied: Impact(p, Palette.Suit, 0.72f, 26); break;
                 case GameEventType.Respawned: fx.Ring(p, Palette.Warm, 2.5f, 0.6f); camPos = Target(true); break;
                 case GameEventType.LampLit:
+                    noticeAt = Time.unscaledTime;
+                    noticeChapter = world.Chapter;
                     fx.Ring(new Vector2(p.x, p.y + 1.7f), Palette.Warm, 3.5f, 0.9f);
                     fx.Burst(new Vector2(p.x, p.y + 1.7f), Palette.Warm, 18, 3f, 0.1f, -1f);
                     Banner("Tide lamp lit", "You will wake here if the water takes you.");
@@ -278,6 +288,16 @@ namespace DrownedBell.Game
                 case GameEventType.LedgerFound: Banner("Keeper record", "A ledger page: the night shift signed the sea-gate log."); break;
                 case GameEventType.DrumKeyTaken: Banner("Drum key", "It fits the choir door in the Return Chute."); break;
                 case GameEventType.OrderTaken: Banner("Sea-gate order", "Signed and sealed. The exit east leads to the engine room."); break;
+                case GameEventType.DockModelSeen: Banner("Reversal model", "The wheel at the sea gate turns the tide. Two latches free the lift."); break;
+                case GameEventType.EngineRecordFound: fx.Ring(new Vector2(p.x, p.y + 0.5f), Palette.Warm, 1.8f, 0.5f); Banner("Keeper record", "A punched card: the third name of the night watch."); break;
+                case GameEventType.PadBounce: fx.Burst(p, Palette.Warm, 6, 3f, 0.1f, 2f, 1f); break;
+                case GameEventType.GovernorLatch: Impact(p, Palette.Warm, 0.3f, 10); Banner("Governor latch", e.Id == 0 ? "One latch is free. The second is on the Condenser Bridge." : "Both latches are free. The lift rides from the stair to the dock."); break;
+                case GameEventType.TideReversed: AddTrauma(0.5f); fx.Ring(p, Palette.Wave, 8f, 1.2f); Banner("The tide turns", "The sea gate is open. Walk out through the nave."); break;
+                case GameEventType.RestLampLit: noticeAt = Time.unscaledTime; noticeChapter = world.Chapter; fx.Ring(new Vector2(p.x, p.y + 1.7f), Palette.Warm, 3.5f, 0.9f); Banner("Lamp lit", "You will wake here if the water takes you."); break;
+                case GameEventType.TidekeeperAwake: AddTrauma(0.44f); Banner("The Tidekeeper", "Strike its hinge while it resets."); break;
+                case GameEventType.TidekeeperStrike: if ((KeeperAttack)e.Id == KeeperAttack.Hammer) Impact(p, Palette.Wave, 0.5f, 16); break;
+                case GameEventType.TidekeeperPhase2: AddTrauma(0.55f); fx.Ring(p, Palette.Warm, 6f, 0.8f); break;
+                case GameEventType.TidekeeperDefeated: Impact(p, Palette.BellRim, 0.9f, 34); fx.Ring(p, Palette.Warm, 10f, 2f); Banner("The Tidekeeper rests", "The bypass wheel is free to turn."); break;
                 case GameEventType.ArchivistAwake: AddTrauma(0.44f); Banner("Archivist of Depths", "Only the real one swings its clapper."); break;
                 case GameEventType.ArchivistLand: Impact(p, Palette.Wave, 0.5f, 16); break;
                 case GameEventType.ArchivistPhase2: AddTrauma(0.55f); fx.Ring(p, Palette.Warm, 6f, 0.8f); break;
@@ -339,8 +359,16 @@ namespace DrownedBell.Game
         void Banner(string title, string sub)
         {
             banner = title;
-            bannerSub = sub;
+            bannerSub = Wrap(sub, 62);
             bannerTime = 0f;
+        }
+
+        /// <summary>Breaks a long line at the last space before `width` characters, so the story lines stay on screen.</summary>
+        static string Wrap(string text, int width)
+        {
+            if (text.Length <= width) return text;
+            int cut = text.LastIndexOf(' ', width);
+            return cut <= 0 ? text : text.Substring(0, cut) + "\n" + Wrap(text.Substring(cut + 1), width);
         }
 
         void ShowRoomBanner(int room)
@@ -364,7 +392,8 @@ namespace DrownedBell.Game
         {
             if (flow != Flow.Victory) return;
             World next = world.Chapter == Chapter.Belfry && world.Level.HasBoss ? world.EnterSluice()
-                : world.Chapter == Chapter.Sluice ? world.EnterArchive() : null;
+                : world.Chapter == Chapter.Sluice ? world.EnterArchive()
+                : world.Chapter == Chapter.Archive ? world.EnterEngine() : null;
             NewRun(continuation: next);
             if (next != null) Save();
             flow = Flow.Playing;
@@ -401,7 +430,11 @@ namespace DrownedBell.Game
                     else if (GameInput.Pause || GameInput.ConfirmOrClick) { flow = Flow.Playing; input.Clear(); }
                     break;
                 case Flow.Victory:
-                    if (GameInput.ConfirmOrClick) ContinueJourney();
+                    if (world.Chapter == Chapter.Engine && Input.GetKeyDown(KeyCode.C)) flow = Flow.Credits;
+                    else if (GameInput.ConfirmOrClick) ContinueJourney();
+                    break;
+                case Flow.Credits:
+                    if (GameInput.Pause || GameInput.ConfirmOrClick || Input.GetKeyDown(KeyCode.C)) flow = Flow.Victory;
                     break;
                 case Flow.Playing:
                     if (GameInput.Pause) { flow = Flow.Paused; break; }
@@ -462,6 +495,7 @@ namespace DrownedBell.Game
             foreach (JellyView j in jellies) j.Tick(dt, reducedFlashing);
             foreach (var machine in machines) machine.Tick(reducedFlashing);
             foreach (var foe in archiveFoes) foe.Tick(dt, reducedFlashing, boss.WaveHeight);
+            foreach (var foe in engineFoes) foe.Tick(dt, reducedFlashing, boss.WaveHeight);
             bossView?.Tick(dt, reducedFlashing);
             fx.Tick(flow == Flow.Paused ? 0f : dt);
 
@@ -552,7 +586,7 @@ namespace DrownedBell.Game
                     GUI.DrawTexture(r, mask);
                     GUI.color = old;
                 }
-                if (world.LampLit) Label(new Rect(3 * u, 8.5f * u, 60 * u, 4 * u), "lamp lit" + (world.GrateOpen ? (world.Chapter == Chapter.Archive ? "   chute open" : "   grate open") : ""), small, Palette.A(Palette.Warm, 0.8f));
+                if (world.LampLit) Label(new Rect(3 * u, 8.5f * u, 60 * u, 4 * u), "lamp lit" + (world.GrateOpen ? (world.Chapter == Chapter.Archive ? "   chute open" : world.Chapter == Chapter.Engine ? "   sea gate open" : "   grate open") : ""), small, Palette.A(Palette.Warm, 0.8f));
                 if (testTarget != null)
                 {
                     Label(new Rect(3 * u, 9 * u, 56 * u, 4 * u), $"Test Room   Target hits {testTarget.Hits}", small, Palette.Warm);
@@ -568,13 +602,17 @@ namespace DrownedBell.Game
                 Archivist ink = world.Archivist;
                 bool pumping = pump != null && pump.Engaged && pump.Alive && pump.Room == world.Room;
                 bool inking = ink != null && ink.Engaged && ink.Alive && ink.Room == world.Room;
-                if (pumping || inking || (bs.Awake && !bs.Dead && world.Room == world.ArenaRoom))
+                Tidekeeper keeper = world.Tidekeeper;
+                bool keeping = keeper != null && keeper.Engaged && keeper.Alive && keeper.Room == world.Room;
+                if (pumping || inking || keeping || (bs.Awake && !bs.Dead && world.Room == world.ArenaRoom))
                 {
                     float bw = w * 0.4f, bx = (w - bw) * 0.5f, by = 7.5f * u;
-                    Label(new Rect(0, by - 4.6f * u, w, 4 * u), inking ? "ARCHIVIST OF DEPTHS" : pumping ? "PUMP WARDEN" : "THE UNDERTOLL", mid, Palette.Text);
+                    Label(new Rect(0, by - 4.6f * u, w, 4 * u), keeping ? "THE TIDEKEEPER" : inking ? "ARCHIVIST OF DEPTHS" : pumping ? "PUMP WARDEN" : "THE UNDERTOLL", mid, Palette.Text);
                     Box(new Rect(bx - 2, by - 2, bw + 4, 1.6f * u + 4), new Color(0, 0, 0, 0.6f));
-                    Box(new Rect(bx, by, bw * (inking ? (float)ink.Health / ink.MaxHealth : pumping ? (float)pump.Health / pump.MaxHealth : (float)bs.Health / bs.MaxHealth), 1.6f * u), Palette.BellRim);
+                    Box(new Rect(bx, by, bw * (keeping ? (float)keeper.Health / keeper.MaxHealth : inking ? (float)ink.Health / ink.MaxHealth : pumping ? (float)pump.Health / pump.MaxHealth : (float)bs.Health / bs.MaxHealth), 1.6f * u), Palette.BellRim);
                 }
+
+                DrawSavedNotice();
 
                 // Banner: room names and story beats, fading in and out.
                 if (bannerTime < 3.2f && banner.Length > 0)
@@ -594,6 +632,11 @@ namespace DrownedBell.Game
                     Overlay("PAUSED", "Esc, Enter or click to resume." + (GameInput.Web ? "" : "   Q to quit."),
                         (testTarget != null ? "T returns to the title.\n" : "Down-swing in the air to bounce off enemies and spikes.\n") +
                         $"1 camera shake {shakeStrength:P0}   2 reduced flashing {(reducedFlashing ? "on" : "off")}");
+                    if (world.GaugeFound && world.Chapter == Chapter.Sluice)
+                    {
+                        CampaignArt.Draw(new Rect(224, 196, 64, 64), "II_Gauge_inspection", new Rect(0, 0, 64, 64));
+                        Label(new Rect(190, 262, 132, 14), "Keeper gauge plate", mid, Palette.TextDim);
+                    }
                     if (world.LedgerFound && world.Chapter == Chapter.Archive)
                     {
                         Sprite page = ArchiveArt.Prop(ArchiveProp.LedgerDetail);
@@ -604,37 +647,99 @@ namespace DrownedBell.Game
                     }
                     break;
                 case Flow.Victory:
-                    DrawBookend(true);
+                    if (world.Chapter == Chapter.Engine) DrawCompletion(); else DrawBookend(true);
+                    break;
+                case Flow.Credits:
+                    CampaignArt.Draw(new Rect(0, 0, PixelWidth, PixelHeight), "CreditsLettered", new Rect(0, 0, 512, 288));
+                    Label(new Rect(0, 270, PixelWidth, 12), "Enter or Esc to go back", small, Palette.TextDim);
                     break;
             }
 
             if (debug) DrawDebug(w, h, u);
         }
 
+        /// <summary>The portrait that goes with each chapter, on the right of the title and chapter-end screens.</summary>
+        Texture2D Portrait(Chapter c) =>
+            c == Chapter.Engine ? CampaignArt.Tex("ChapterPlate") : c == Chapter.Archive ? archivePlate :
+            c == Chapter.Sluice ? CampaignArt.Tex("II_Sluice_portrait") : belfry;
+
+        static string Roman(Chapter c) => c == Chapter.Engine ? "IV" : c == Chapter.Archive ? "III" : c == Chapter.Sluice ? "II" : "I";
+
+        /// <summary>The chapter a victory screen leads into, or the same chapter once the campaign is finished.</summary>
+        static Chapter NextChapter(Chapter c) => c == Chapter.Engine ? Chapter.Engine : (Chapter)((int)c + 1);
+
         void DrawBookend(bool victory)
         {
             Box(new Rect(0, 0, PixelWidth, PixelHeight), Palette.SkyBottom);
-            bool archiveArt = victory ? world.Chapter != Chapter.Belfry : save != null && save.Chapter == Chapter.Archive;
-            GUI.DrawTexture(new Rect(320, 0, 192, 288), archiveArt ? archivePlate : belfry);
+            Chapter shown = victory ? NextChapter(world.Chapter) : (save != null ? save.Chapter : Chapter.Belfry);
+            Texture2D portrait = Portrait(shown);
+            if (portrait != null) GUI.DrawTexture(new Rect(320, 0, 192, 288), portrait);
             Box(new Rect(319, 0, 1, 288), Palette.RockSide);
-            bool outlet = world.Chapter != Chapter.Belfry;
-            bool final = world.Chapter == Chapter.Archive;
+            Chapter now = world.Chapter;
+            bool outlet = now != Chapter.Belfry;
+            bool final = now == Chapter.Engine;
             const int x = 22, width = 280;
-            Label(new Rect(x, 35, width, 60), victory ? (final ? "THE ORDER\nIS YOURS" : outlet ? "PUMP\nSILENCED" : "THE BELL IS\nSILENT") : "DROWNED\nBELL", -3, Palette.Warm);
+            string headline = victory ? (final ? "THE TIDE\nTURNS" : now == Chapter.Archive ? "THE ORDER\nIS YOURS" : outlet ? "PUMP\nSILENCED" : "THE BELL IS\nSILENT") : "DROWNED\nBELL";
+            Label(new Rect(x, 35, width, 60), headline, -3, Palette.Warm);
             Label(new Rect(x, 109, width, 34), victory
-                ? (final ? "The sea-gate order names who drowned the halls. The engine room lies below. End of the current build."
+                ? (final ? "The sea gate is open and the water drains from the nave. Morning comes to the Drowned Bell."
+                    : now == Chapter.Archive ? "The sea-gate order names who drowned the halls. The engine room lies below."
                     : outlet ? "The pumps fall quiet. The key opens the hatch to the Sounding Archive." : "Below the silent bell, an intake has opened. The pumps are still running.")
                 : "A salvage diver descends a flooded tower to silence the bell that keeps drowning the halls.", small, Palette.Text);
             Box(new Rect(x, 151, 32, 1), Palette.WarmDeep);
-            string details = victory
-                ? "Time   " + FormatTime(world.Time) + "\nDeaths   " + world.Deaths + "\nBrass Lung   " + (world.LungTaken ? "found" : "missed")
-                : "A/D move    Space jump    Shift dash\nX/J swing   W/S aim\nLeft click swing    Right click dash\nEsc pause   M mute   " + (GameInput.Web ? "I" : "F1") + " inspector";
-            if (victory && outlet) details += "\nKeeper records   " + ((world.GaugeFound ? 1 : 0) + (world.LedgerFound ? 1 : 0)) + " of " + (final ? 2 : 1);
-            Label(new Rect(x, 169, width, 48), details, small, Palette.TextDim);
             bool resume = !victory && save != null;
-            Label(new Rect(x, 231, width, 12), victory ? (final ? "Enter or click to dive again" : outlet ? "Enter or click to enter the Sounding Archive" : "Enter or click to enter the Sluice Works") : resume ? "Enter or click to continue" : "Enter or click to dive", small, Palette.Warm);
-            if (resume) Label(new Rect(x, 242, width, 12), "Saved   " + save.Summary(), small, Palette.Text);
-            Label(new Rect(x, resume ? 260 : 252, width, 12), (resume ? "N new game    " : "") + (victory ? "" : "T test room    ") + (GameInput.Web ? "" : "Q quit"), small, Palette.TextDim);
+            if (resume)
+            {
+                // The lamp register: the chapter's seal, its name and the checkpoint the run wakes at.
+                CampaignArt.Draw(new Rect(x, 160, 32, 32), "Checkpoint_seals", new Rect(((int)save.Chapter - 1) * 32, 0, 32, 32));
+                Label(new Rect(x + 40, 163, 200, 10), "CHAPTER " + Roman(save.Chapter), small, Palette.Warm);
+                Label(new Rect(x + 40, 175, 200, 10), "LAMP REGISTER", small, Palette.TextDim);
+                Label(new Rect(x, 199, width, 10), SaveData.ChapterTitle(save.Chapter).ToUpperInvariant(), mid, Palette.Text);
+                Label(new Rect(x, 212, width, 10), "Last checkpoint", small, Palette.TextDim);
+                Label(new Rect(x, 221, width, 10), save.Place(), small, Palette.Text);
+            }
+            else
+            {
+                string details = victory
+                    ? "Time   " + FormatTime(world.Time) + "\nDeaths   " + world.Deaths + "\nBrass Lung   " + (world.LungTaken ? "found" : "missed")
+                    : "A/D move    Space jump    Shift dash\nX/J swing   W/S aim\nLeft click swing    Right click dash\nEsc pause   M mute   " + (GameInput.Web ? "I" : "F1") + " inspector";
+                if (victory && outlet) details += "\nKeeper records   " + RecordsFound() + " of " + RecordsTotal(now);
+                Label(new Rect(x, 169, width, 48), details, small, Palette.TextDim);
+            }
+            Label(new Rect(x, 238, width, 12), victory ? (final ? "Enter or click to dive again" : "Enter or click to enter the " + SaveData.ChapterTitle(NextChapter(now))) : resume ? "> CONTINUE" : "Enter or click to dive", small, Palette.Warm);
+            if (resume) Label(new Rect(x, 249, width, 12), "Saved   " + save.Summary(), small, Palette.TextDim);
+            Label(new Rect(x, resume ? 266 : 258, width, 12), (resume ? "N new dive    " : "") + (victory ? "" : "T test room    ") + (GameInput.Web ? "" : "Q quit"), small, Palette.TextDim);
+        }
+
+        int RecordsFound() => (world.GaugeFound ? 1 : 0) + (world.LedgerFound ? 1 : 0) + (world.EngineRecord ? 1 : 0);
+
+        /// <summary>The last screen: the finished completion layout with the memorial of the keepers found and the run's figures.</summary>
+        void DrawCompletion()
+        {
+            CampaignArt.Draw(new Rect(0, 0, PixelWidth, PixelHeight), "IV_Completion", new Rect(0, 0, 512, 288));
+            // The memorial shows one name for each record found: 1 gauge, 2 ledger, 4 punched record.
+            int state = (world.GaugeFound ? 1 : 0) + (world.LedgerFound ? 2 : 0) + (world.EngineRecord ? 4 : 0);
+            CampaignArt.Draw(new Rect(MemorialX, MemorialY, 196, 122), "IV_Memorial_states", new Rect((state % 4) * 196, (state / 4) * 122, 196, 122));
+            Box(new Rect(66, 219, 52, 12), new Color(21f / 255f, 38f / 255f, 48f / 255f, 1f));
+            Box(new Rect(180, 219, 28, 12), new Color(21f / 255f, 38f / 255f, 48f / 255f, 1f));
+            Label(new Rect(66, 220, 60, 10), FormatTime(world.Time), small, Palette.Text);
+            Label(new Rect(182, 220, 26, 10), world.Deaths.ToString(), small, Palette.Text);
+            Label(new Rect(28, 270, 190, 10), "Enter new dive    C credits", small, Palette.TextDim);
+        }
+
+        const float MemorialX = 17f, MemorialY = 89f;
+        static int RecordsTotal(Chapter c) => c == Chapter.Sluice ? 1 : c == Chapter.Archive ? 2 : 3;
+
+        /// <summary>The "DIVE SAVED" notice that slides in when a lamp is lit; the art has one per chapter.</summary>
+        void DrawSavedNotice()
+        {
+            float age = Time.unscaledTime - noticeAt;
+            if (age > 3.6f || noticeChapter == 0) return;
+            float a = Mathf.Clamp01(age * 4f) * Mathf.Clamp01((3.6f - age) * 3f);
+            Color old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, a);
+            CampaignArt.Draw(new Rect(PixelWidth - 176, 10, 168, 42), "Saved_notices", new Rect(0, ((int)noticeChapter - 1) * 42, 168, 42));
+            GUI.color = old;
         }
 
         void Overlay(string title, string sub, string body)

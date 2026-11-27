@@ -1,0 +1,117 @@
+"""Generate Assets/Scripts/Core/EngineData.cs, the Tidal Engine map (chapter IV).
+
+The seven rooms follow the finished room plates in art/TidalEngine (each plate is exactly one 32 x 18 tile room).
+Surface heights were read from the plates (the bright top edge of each floor, in tiles above the room bottom):
+Dock and Cradle and Gate are flat at 4, the Condenser has 5-tile islands between 4-tile bridge segments and
+water channels, the Watch has a water floor at 3 and a raised platform at 8, the Governor Stair climbs from 4 to 8
+in one-tile steps. The plates are drawn about a quarter tile off the tile grid in places; the game shifts each plate
+by a fixed pixel offset (see EngineArt in LevelView) so the painted floor meets the collision floor.
+
+Layout (36 rows, 192 columns):
+  upper band (y 18..35): Service Dock, Flywheel Cradle, Condenser Bridge, Governor Stair, Sea Gate, Morning Nave
+  lower band (y 0..17):  Night Watch, directly under the Condenser Bridge, reached by a stack of one-way shelves
+                         in a hatch near the bridge entrance and left by the same stack.
+Run: python tools/engine_rooms.py
+"""
+
+import json
+from pathlib import Path
+
+W, H = 192, 36
+BAND = 18                       # height of one room
+grid = [["#"] * W for _ in range(H)]
+specs = []
+
+
+def cell(x, y, ch):
+    """x = column, y = tiles above the map bottom (row = H - 1 - y)."""
+    grid[H - 1 - y][x] = ch
+
+
+def carve(x, y0, y1):
+    for y in range(y0, y1 + 1):
+        cell(x, y, ".")
+
+
+def room(name, purpose, col, band, heights):
+    """Open a room: `heights[c]` is the surface height (tiles above the band bottom) of local column c."""
+    base = BAND if band == 0 else 0
+    for c, h in enumerate(heights):
+        x = col + c
+        for y in range(base + h, base + BAND - 1):     # open air from the surface to just under the ceiling row
+            cell(x, y, ".")
+    specs.append((name, purpose, col, 0 if band == 0 else BAND, 32, BAND))
+
+    def put(local_x, height, ch):
+        """A marker standing on the floor: `height` is the surface height it stands on."""
+        cell(col + local_x, base + height, ch)
+    return put
+
+
+# ---- upper band ------------------------------------------------------------------------------------------------
+dock = room("Service Dock", "Light the final lamp and inspect the model of the reversal mechanism.", 0, 0, [4] * 32)
+dock(2, 4, "P")
+dock(6, 4, "C")
+dock(21, 4, "d")
+
+cradle = room("Flywheel Cradle", "A Ballast Knight guards the first governor latch. Pass behind the hammer, then strike the hinge.", 32, 0, [4] * 32)
+cradle(15, 4, "N")
+cradle(28, 4, "Y")
+
+cond_h = [4] * 6 + [2] * 2 + [5] * 5 + [2] + [4] * 5 + [2] + [5] * 4 + [2] * 2 + [4] * 6
+condenser = room("Condenser Bridge", "Cross the vents and the floor waves. The second governor latch is at the far end.", 64, 0, cond_h)
+condenser(10, 5, "V")
+condenser(22, 5, "V")
+condenser(16, 4, "W")
+condenser(28, 4, "Y")
+
+stair_h = [4] * 14 + [5] * 3 + [6] * 4 + [7] * 3 + [8] * 8
+stair = room("Governor Stair", "Both latches release the lift to the dock. A last lamp overlooks the sea gate.", 96, 0, stair_h)
+stair(3, 4, "F")
+stair(29, 8, "A")
+
+gate = room("Sea Gate", "The Tidekeeper guards the bypass wheel. Strike its hinge while it resets, then turn the wheel.", 128, 0, [4] * 32)
+gate(21, 4, "U")
+gate(28, 4, "X")
+for y in range(4, 7):
+    cell(128 + 31, 18 + y, "G")             # the sea gate: closed until the tide is reversed
+
+nave = room("Morning Nave", "The drained first room. Walk out into the morning.", 160, 0, [4] * 32)
+nave(28, 4, "E")
+
+# ---- lower band: Night Watch (cols 64..95) ----------------------------------------------------------------------
+watch_h = [3] * 23 + [8] * 9
+watch = room("Night Watch", "Optional. Three spring pads cross the water to the keeper's record.", 64, 1, watch_h)
+for local_x, height in ((8, 5), (13, 6), (18, 7)):
+    watch(local_x, height, "S")
+watch(28, 8, "R")
+
+# The hatch: a 2-wide shaft (condenser cols 2-3) from the bridge entrance down to the Night Watch, with a stack of
+# one-way shelves two tiles apart (the controller rises 3.26 tiles) so it can be climbed back out.
+for x in (66, 67):
+    carve(x, BAND + 0, BAND + 3)            # the Condenser floor (rows 18..21)
+    carve(x, BAND - 2, BAND - 1)            # the Night Watch ceiling (rows 16..17)
+    for y in range(4, BAND + 4, 2):
+        cell(x, y, "=")
+
+# ---- borders ----------------------------------------------------------------------------------------------------
+for y in range(H):
+    cell(0, y, "#")
+    cell(W - 1, y, "#")
+for y in range(0, BAND):                    # Night Watch has its own side walls
+    cell(64, y, "#")
+    cell(95, y, "#")
+
+ORDER = ["Service Dock", "Flywheel Cradle", "Condenser Bridge", "Night Watch", "Governor Stair", "Sea Gate", "Morning Nave"]
+specs.sort(key=lambda s: ORDER.index(s[0]))
+
+rows = ["".join(r) for r in grid]
+assert all(len(r) == W for r in rows)
+out = ["// Generated by tools/engine_rooms.py.", "namespace DrownedBell.Core", "{", "    internal static class EngineData", "    {",
+       "        public static readonly (string Name, string Purpose, int Col, int Row, int W, int H)[] Rooms =", "        {"]
+out += [f"            ({json.dumps(n)}, {json.dumps(p)}, {c}, {r}, {w}, {h})," for n, p, c, r, w, h in specs]
+out += ["        };", "", "        public static readonly string[] Rows =", "        {"]
+out += [f'            "{r}",' for r in rows]
+out += ["        };", "    }", "}", ""]
+(Path(__file__).resolve().parents[1] / "Assets/Scripts/Core/EngineData.cs").write_text("\n".join(out), encoding="utf-8")
+print("\n".join(rows))

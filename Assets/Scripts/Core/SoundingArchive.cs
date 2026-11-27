@@ -50,7 +50,7 @@ namespace DrownedBell.Core
         const float LoftFloor = 20f;
 
         /// <summary>True when a ripple will reach the diver within about a quarter second, or is about to start beside them.</summary>
-        static bool RippleComing(World w)
+        internal static bool RippleComing(World w)
         {
             Body b = w.Player.Body;
             bool Close(System.Collections.Generic.List<Shockwave> waves)
@@ -81,6 +81,14 @@ namespace DrownedBell.Core
                     bool soon = (tw.Beat == WidowBeat.Spread && tw.Elapsed > TuningWidow.SpreadTime - 0.1f) ||
                                 (tw.Beat == WidowBeat.Ring && tw.Elapsed > RippleBell.EchoDelay - 0.1f);
                     if (tw.Alive && soon && Beside(tw.Body.Pos.X, tw.Body.Bottom)) return true;
+                }
+                if (e is Tidekeeper tk)
+                {
+                    if (Close(tk.Waves)) return true;
+                    bool soonWave = tk.Beat == KeeperBeat.Windup && (tk.Attack == KeeperAttack.Wave || tk.Attack == KeeperAttack.Echo) &&
+                                    tk.Elapsed > tk.WindupTime(tk.Attack) - 0.1f;
+                    bool soonEcho = tk.EchoIn >= 0f && tk.EchoIn < 0.1f;
+                    if (tk.Alive && (soonWave || soonEcho) && Beside(tk.Body.Pos.X, tk.Body.Bottom)) return true;
                 }
                 if (e is Archivist ar)
                 {

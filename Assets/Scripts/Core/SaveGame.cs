@@ -5,7 +5,7 @@ using System.Text;
 
 namespace DrownedBell.Core
 {
-    public enum Chapter { Belfry = 1, Sluice = 2, Archive = 3 }
+    public enum Chapter { Belfry = 1, Sluice = 2, Archive = 3, Engine = 4 }
 
     /// <summary>
     /// One campaign save: which chapter, what is opened or found, and the running totals. Positions are not saved:
@@ -27,6 +27,8 @@ namespace DrownedBell.Core
         public bool Ledger, DrumKey, ArchivistDown, Order;
         /// <summary>The run seed the bosses roll their attacks from. 0 (a save from before v0.7) means the game picks a new one when it continues.</summary>
         public int Seed;
+        /// <summary>Tidal Engine: the two governor latches, the keeper's record, the Tidekeeper beaten, the tide reversed and the last lamp lit. Optional in the file (added in v0.8).</summary>
+        public bool Latch1, Latch2, EngineRecord, KeeperDown, Reversed, RestLit;
 
         public string Serialize()
         {
@@ -49,6 +51,12 @@ namespace DrownedBell.Core
             Put("archivist", ArchivistDown);
             Put("order", Order);
             Put("seed", Seed);
+            Put("latch1", Latch1);
+            Put("latch2", Latch2);
+            Put("engrecord", EngineRecord);
+            Put("keeperdown", KeeperDown);
+            Put("reversed", Reversed);
+            Put("restlit", RestLit);
             Put("end", "ok");
             return sb.ToString();
         }
@@ -86,6 +94,12 @@ namespace DrownedBell.Core
                 s.DrumKey = Optional("drumkey");
                 s.ArchivistDown = Optional("archivist");
                 s.Order = Optional("order");
+                s.Latch1 = Optional("latch1");
+                s.Latch2 = Optional("latch2");
+                s.EngineRecord = Optional("engrecord");
+                s.KeeperDown = Optional("keeperdown");
+                s.Reversed = Optional("reversed");
+                s.RestLit = Optional("restlit");
                 if (map.TryGetValue("seed", out string seedText)) s.Seed = int.Parse(seedText, CultureInfo.InvariantCulture);
             }
             catch (Exception e) when (e is KeyNotFoundException || e is FormatException || e is OverflowException)
@@ -96,10 +110,18 @@ namespace DrownedBell.Core
             return s;
         }
 
+        public static string ChapterTitle(Chapter c) =>
+            c == Chapter.Engine ? "Tidal Engine" : c == Chapter.Archive ? "Sounding Archive" : c == Chapter.Sluice ? "Sluice Works" : "Drowned Belfry";
+
+        /// <summary>The checkpoint a continued run wakes at, by the name the lamp register uses.</summary>
+        public string Place() =>
+            Chapter == Chapter.Engine ? (RestLit ? "Governor Stair" : "Service Dock") : Chapter == Chapter.Archive ? "Receiving Desk" :
+            Chapter == Chapter.Sluice ? (Lift ? "Counterweight Walk" : "Intake Dock") : "Belfry Landing";
+
         public string Summary()
         {
             int t = (int)Time;
-            return (Chapter == Chapter.Archive ? "Sounding Archive" : Chapter == Chapter.Sluice ? "Sluice Works" : "Drowned Belfry") + "   " + (t / 60) + ":" + (t % 60).ToString("00", CultureInfo.InvariantCulture);
+            return ChapterTitle(Chapter) + "   " + (t / 60) + ":" + (t % 60).ToString("00", CultureInfo.InvariantCulture);
         }
     }
 }

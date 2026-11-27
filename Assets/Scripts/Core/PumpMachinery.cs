@@ -41,11 +41,11 @@ namespace DrownedBell.Core
         /// <summary>How long the current Brace lasts: a delayed swing hangs 0.4 s longer, to punish a dodge made too early.</summary>
         public float BraceTime { get; private set; } = 0.6f;
         public float MarkTime => SecondPhase ? 0.45f : 0.6f;
-        public float RecoverTime => IsWarden ? (SecondPhase ? 0.7f : 0.85f) : Kind == EnemyKind.Porter ? 1.1f : 1f;
-        public override int AttackDamage => IsWarden && Beat == MachineBeat.Strike ? 2 : 1;
+        public float RecoverTime => IsWarden ? (SecondPhase ? 0.7f : 0.85f) : Kind == EnemyKind.Porter || Kind == EnemyKind.Knight ? 1.1f : 1f;
+        public override int AttackDamage => (IsWarden || Kind == EnemyKind.Knight) && Beat == MachineBeat.Strike ? 2 : 1;
 
         public PumpMachine(int id, EnemyKind kind, Vec2 feet, int room) : base(id, kind, feet, room,
-            kind == EnemyKind.Warden ? 3.5f : 1.5f, kind == EnemyKind.Warden ? 3.5f : 1.5f,
+            kind == EnemyKind.Warden ? 3.5f : kind == EnemyKind.Knight ? 1.7f : 1.5f, kind == EnemyKind.Warden ? 3.5f : kind == EnemyKind.Knight ? 2.4f : 1.5f,
             kind == EnemyKind.Warden ? 22 : kind == EnemyKind.Limpet ? 3 : 4) { }
 
         /// <summary>Lane 3 is a tracked jet: when the diver keeps well back from the pipes it vents under their feet, so range is never safe.</summary>
@@ -65,7 +65,7 @@ namespace DrownedBell.Core
                 // dodge across it or jump it (the sweep is low).
                 if (IsWarden)
                     return new Aabb(new Vec2(Home.X + Facing * 2.75f, Body.Bottom + 0.55f), new Vec2(2.75f, 0.38f));
-                float reach = Kind == EnemyKind.Porter ? 5.5f : 3f;
+                float reach = Kind == EnemyKind.Porter ? 5.5f : Kind == EnemyKind.Knight ? 3.4f : 3f;
                 return new Aabb(new Vec2(Home.X + Facing * (reach + Body.Half.X) * 0.5f, Body.Bottom + 0.55f),
                     new Vec2((reach - Body.Half.X) * 0.5f, 0.38f));
             }
@@ -79,7 +79,8 @@ namespace DrownedBell.Core
 
         public override bool TakeHit(World w, int swingId, int damage, float fromX)
         {
-            if (IsWarden && Beat != MachineBeat.Recover) return false;
+            // The Warden's casing and the Knight's hinge are only open while the machine recovers.
+            if ((IsWarden || Kind == EnemyKind.Knight) && Beat != MachineBeat.Recover) return false;
             bool before = SecondPhase;
             bool hit = base.TakeHit(w, swingId, damage, fromX);
             if (hit && IsWarden && !before && SecondPhase && Alive)
@@ -151,7 +152,7 @@ namespace DrownedBell.Core
                     else { Facing = dx >= 0 ? 1 : -1; Enter(MachineBeat.Brace); }
                     break;
                 case MachineBeat.Brace:
-                    if (Elapsed >= (IsWarden ? BraceTime : Kind == EnemyKind.Limpet ? 0.8f : 0.85f)) Enter(MachineBeat.Strike);
+                    if (Elapsed >= (IsWarden ? BraceTime : Kind == EnemyKind.Limpet ? 0.8f : Kind == EnemyKind.Knight ? 1.0f : 0.85f)) Enter(MachineBeat.Strike);
                     break;
                 case MachineBeat.Strike:
                     if (Elapsed >= 0.30f) Enter(MachineBeat.Recover);

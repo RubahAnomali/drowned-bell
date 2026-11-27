@@ -5,6 +5,25 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.8 (the Tidal Engine, chapter IV)
+
+- Chapter IV is playable: seven rooms on the finished room plates. Service Dock (lamp and a model of the reversal
+  mechanism), Flywheel Cradle (a Ballast Knight and the first governor latch), Condenser Bridge (vents, floor waves and
+  the second latch), the optional Night Watch under the bridge (three spring pads and the third keeper record),
+  Governor Stair (a lift back to the dock and a last lamp), Sea Gate and the Morning Nave. Walking out into the
+  morning ends the campaign.
+- New foes: the Ballast Knight (brace, strike, reset; its hinge is only open while it resets) and the Tidekeeper, the
+  last boss: hammer, floor wave, pressure lane and echo in random order, the hinge only open during the reset, phrases
+  of three attacks with a resting beat below half health. It is hardened like the other bosses and checked by the
+  same difficulty harness.
+- The campaign art is in: continue screen with the lamp register and chapter seals, "dive saved" notices, the Sluice
+  portrait, gauge and pipe-diagram inspections, machinery sprites, the completion screen with the memorial of the three
+  keepers found, the credits, and the Engine room plates, Knight and Tidekeeper cels.
+- Saves carry the Engine state (latches, record, Tidekeeper down, tide reversed, rest lamp); finishing the Engine
+  clears the save and the next dive starts fresh. Saves from v0.7 and earlier still load.
+- The autoplay bot now plays all four chapters, takes screenshots of the Engine and the ending, and checks the
+  dive-again run starts clean.
+
 ## v0.7 (random boss fights)
 
 - The three bosses now pick their attacks at random, so no fight shows a fixed pattern and every new save plays

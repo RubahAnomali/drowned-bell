@@ -1,5 +1,9 @@
 # Drowned Bell handoff notes
 
+## Art review through Chapter III
+
+The Windows art-review ZIP is Builds/Drowned-Bell-Archive-Art-Windows-x64.zip. A fresh extraction reached Archive victory with the ledger, drum key and sea-gate order, then restarted with zero runtime errors (docs/qa-archive-art-preview.txt). In-game previews are docs/screenshots/warden-vent.gif, warden-sweep.gif, and archive-attack-poses.gif. The brighter Ink Moth wing edges were verified against Silt Stacks shelving. Chapter IV environments, actors, dawn ending art and final credits remain planned. The art-review ZIP is distinct from later gameplay builds.
+
 ## Random boss fights, 27 November 2026 (v0.7)
 
 Bosses pick attacks at random: `Core/Dice.cs` (a seeded xorshift `Dice` and a shuffle `Bag`), `Boss.ChooseAttack`, the Warden's engage and pulse code in `PumpMachinery.cs` and the Archivist's hover, landing and chain code in `ArchiveFoes.cs`. `World.Seed` (default `World.DefaultSeed` for tests and tools) is mixed with the boss and the death count by `World.ReseedBosses` at construction and on every respawn; `SaveData.Seed` stores it; `GameController.FreshSeed` picks a new one for a new game (`-seed N` forces one). The suite (214 checks) and a real-build bot run were run after the change; see docs/QA_REPORT.md. `DIFFICULTY_SEEDS=1 dotnet run -c Release` measures the bosses over eight seeds. The Undertoll is the one the scripted diver struggles with (it is hardest, and the diver sometimes ends a recovery inside the bell or gets caught by a chained slam): improving `Autopilot.BossFight` would make the measurements tighter. `BossTuning.FarRushChance` lets a test force the rush.
@@ -234,3 +238,16 @@ Fill `.claude/skills/create-game-assets/assets/art-direction-brief.md` into `doc
 - No human has played it. Feel, difficulty, audio and real keyboard and mouse use in the build are unverified.
 - The playthrough is likely shorter than the brief's 10-15 minute target. The autopilot reaches the boss in about 45 s; humans will take longer.
 - The test room isn't reachable in-game yet.
+
+## Chapter IV pixel art · 27 November 2026
+
+The art-only deliverables are in `art/TidalEngine`. Open `Art guide.md` for the atlas layout, pose cues and room names. Seven room designs, the dawn and English credits, editable Aseprite character animations and preview GIFs are present. The Knight hammer and Tidekeeper echo were exported by Aseprite and matched the source pixels. The previews are art composites. Connecting Chapter IV to gameplay is outside the artist's assignment.
+
+
+## Chapter IV is playable · 27 November 2026
+
+The Tidal Engine and the campaign art are wired in (v0.8). Map: `tools/engine_rooms.py` generates `Core/EngineData.cs` (36 rows, two bands: the six upper rooms and the Night Watch under the Condenser Bridge); `Core/TidalEngine.cs` holds the builder, the stations (dock model, record, lift, rest lamp) and the input-only `RouteInput`/`PadRoute`; `Core/EngineFoes.cs` is the Tidekeeper; the Ballast Knight is a `PumpMachine` of kind `Knight`. New Level markers: Y latch, X wheel, d dock model, F stair lift, S spring pad, N knight, U Tidekeeper, G sea gate. World events: GovernorLatch, TideReversed, EngineRecordFound, PadBounce, RestLampLit, Tidekeeper*. Saves carry `Latch1/Latch2/EngineRecord/KeeperDown/Reversed/RestLit`.
+
+View: `LevelView` draws the Engine as seven 512 x 288 plates (`BuildEnginePlate`, with a per-room pixel shift measured on the art: Dock, Cradle, Condenser, Gate and Nave are painted 3 px high, the Night Watch 4 px low) plus the state changes the plates do not paint (thrown latches, the turning wheel, lamp glows, vents, ripple outlets, the hatch shelves). `EngineFoeView` draws the Knight and Tidekeeper from `Attacks.png`, `OpenCrown.png` and `ActorSupport.png`; floor waves keep the shared dome drawing. `GameController` has the completion screen (`DrawCompletion`: `IV_Completion` plus `IV_Memorial_states`, state = gauge 1 + ledger 2 + punched record 4) and a credits screen (C on the completion screen). The Campaign art (continue screen, seals, saved notices, Sluice portrait, gauge, pipe diagram, machinery) is in `Game/CampaignArt.cs` and `Assets/Resources/Art`.
+
+QA: `EngineChecks.cs` (headless), `ENGINE_TRACE=1` and `PAD_TRACE=1` dotnet runs, the Tidekeeper row in the difficulty table, and `-autoplay` now plays all four chapters.

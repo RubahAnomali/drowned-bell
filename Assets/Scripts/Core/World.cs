@@ -14,6 +14,8 @@ namespace DrownedBell.Core
         RippleWindup, RippleToll,
         BossAwake, BossSlamWindup, BossSlam, BossRushWindup, BossRush, BossWallHit, BossRainWarn, DripSplash,
         BossHit, BossPhase2, BossDefeated, Victory, GaugeFound, LiftOnline, PumpKeyTaken, PumpSurge, MachineBrace, PipeWarning, BypassOnline,
+        DockModelSeen, EngineRecordFound, PadBounce, GovernorLatch, TideReversed, RestLampLit,
+        TidekeeperAwake, TidekeeperWindup, TidekeeperStrike, TidekeeperWave, TidekeeperPhase2, TidekeeperDefeated,
         PlayerHealed, MothMark, MothDive, MothLodged, WidowSpread, WidowRing, ArchivistAwake, ArchivistMark, ArchivistLand, ArchivistPhase2, ArchivistDefeated,
         LedgerFound, DrumKeyTaken, OrderTaken, ChuteRide,
     }
@@ -55,6 +57,13 @@ namespace DrownedBell.Core
         public bool LedgerFound { get; private set; }
         public bool DrumKey { get; private set; }
         public bool OrderTaken { get; private set; }
+        public Tidekeeper Tidekeeper { get; private set; }
+        /// <summary>The two governor latches (Flywheel Cradle, Condenser Bridge), the keeper's record in the Night Watch, the reversed tide, the dock model and the last lamp.</summary>
+        public readonly bool[] LatchOpen = new bool[2];
+        public bool EngineRecord { get; private set; }
+        public bool TideReversed { get; private set; }
+        public bool DockModelSeen { get; private set; }
+        public bool RestLit { get; private set; }
         bool upHeld;
 
         public Phase Phase { get; private set; } = Phase.Playing;
@@ -104,6 +113,8 @@ namespace DrownedBell.Core
                     Foes.Add(machine);
                     if (machine.IsWarden) Warden = machine;
                 }
+                else if (s.Kind == 'N') Foes.Add(new PumpMachine(id++, EnemyKind.Knight, s.Pos, s.Room));
+                else if (s.Kind == 'U') Foes.Add(Tidekeeper = new Tidekeeper(id++, s.Pos, s.Room));
                 else if (s.Kind == 'O' || s.Kind == 'o') RippleBells.Add(new RippleBell(s, Level));
                 else if (s.Kind == 'm') Foes.Add(new InkMoth(id++, s.Pos, s.Room));
                 else if (s.Kind == 'w') Foes.Add(Widow = new TuningWidow(id++, s.Pos, s.Room));
@@ -146,7 +157,53 @@ namespace DrownedBell.Core
             return next;
         }
 
+        /// <summary>After the Archivist: the last chapter, carrying the upgrades, records, time and deaths.</summary>
+        public World EnterEngine()
+        {
+            if (Phase != Phase.Victory || Chapter != Chapter.Archive)
+                throw new InvalidOperationException("The Tidal Engine opens after the Sounding Archive.");
+            var next = new World(Move, Combat, Enemies, BossT, TidalEngine.Build(), Seed);
+            next.Time = Time;
+            next.Deaths = Deaths;
+            next.LungTaken = LungTaken;
+            next.GaugeFound = GaugeFound;
+            next.LedgerFound = LedgerFound;
+            next.Player.MaxHealth = Player.MaxHealth;
+            next.Player.Health = Player.MaxHealth;
+            return next;
+        }
+
         public Chapter Chapter => Level.Chapter;
+
+        internal void SetEngineFlag(GameEventType what, Vec2 at)
+        {
+            if (what == GameEventType.DockModelSeen) DockModelSeen = true;
+            else if (what == GameEventType.EngineRecordFound) EngineRecord = true;
+            else if (what == GameEventType.LiftOnline) LiftOnline = true;
+            Emit(what, at);
+        }
+
+        internal void OpenLatch(int index)
+        {
+            LatchOpen[index] = true;
+            Emit(GameEventType.GovernorLatch, Level.Latches[index], index);
+        }
+
+        /// <summary>The bypass wheel turns once the Tidekeeper is down: the sea gate opens and the nave drains.</summary>
+        internal void ReverseTide()
+        {
+            TideReversed = true;
+            Level.GrateOpen = true;
+            Emit(GameEventType.TideReversed, Level.Wheel.Value);
+        }
+
+        internal void LightRestLamp(Vec2 lamp)
+        {
+            RestLit = true;
+            RespawnFeet = lamp;
+            Player.Health = Player.MaxHealth;
+            Emit(GameEventType.RestLampLit, lamp);
+        }
 
         internal void SetArchiveFlag(GameEventType what, Vec2 at)
         {
@@ -171,7 +228,7 @@ namespace DrownedBell.Core
         /// </summary>
         public SaveData Snapshot()
         {
-            var s = new SaveData { Chapter = Chapter, Time = Time, Deaths = Deaths, Lung = LungTaken, Gauge = GaugeFound, Seed = Seed };
+            var s = new SaveData { Chapter = Chapter, Time = Time, Deaths = Deaths, Lung = LungTaken, Gauge = GaugeFound, Ledger = LedgerFound, Seed = Seed };
             if (Chapter == Chapter.Belfry && Level.HasBoss && Boss.Dead)
             {
                 s.Chapter = Chapter.Sluice;
@@ -183,11 +240,24 @@ namespace DrownedBell.Core
                 s.Chapter = Chapter.Archive;
                 return s;
             }
+            if (Chapter == Chapter.Archive && Phase == Phase.Victory)
+            {
+                s.Chapter = Chapter.Engine;
+                return s;
+            }
             s.Lamp = LampLit;
             s.Gate = GrateOpen;
+            if (Chapter == Chapter.Engine)
+            {
+                s.Latch1 = LatchOpen[0];
+                s.Latch2 = LatchOpen[1];
+                s.EngineRecord = EngineRecord;
+                s.KeeperDown = Tidekeeper != null && !Tidekeeper.Alive;
+                s.Reversed = TideReversed;
+                s.RestLit = RestLit;
+            }
             if (Chapter == Chapter.Archive)
             {
-                s.Ledger = LedgerFound;
                 s.DrumKey = DrumKey;
                 s.ArchivistDown = Archivist != null && !Archivist.Alive;
                 s.Order = OrderTaken;
@@ -206,7 +276,7 @@ namespace DrownedBell.Core
         public static World Restore(SaveData s, MovementTuning move = null, CombatTuning combat = null, EnemyTuning enemies = null, BossTuning boss = null)
         {
             var w = new World(move, combat, enemies, boss,
-                s.Chapter == Chapter.Sluice ? SluiceWorks.Build() : s.Chapter == Chapter.Archive ? SoundingArchive.Build() : null,
+                s.Chapter == Chapter.Engine ? TidalEngine.Build() : s.Chapter == Chapter.Sluice ? SluiceWorks.Build() : s.Chapter == Chapter.Archive ? SoundingArchive.Build() : null,
                 s.Seed != 0 ? s.Seed : DefaultSeed);
             w.ReseedBosses();
             w.Time = s.Time;
@@ -217,9 +287,21 @@ namespace DrownedBell.Core
             w.Level.GrateOpen = s.Gate;
             if (s.Lamp) w.RespawnFeet = w.Level.Checkpoint;
             w.GaugeFound = s.Gauge;
+            w.LedgerFound = s.Ledger;
+            if (s.Chapter == Chapter.Engine)
+            {
+                w.LatchOpen[0] = s.Latch1;
+                w.LatchOpen[1] = s.Latch2;
+                w.EngineRecord = s.EngineRecord;
+                w.LiftOnline = s.Latch1 && s.Latch2;
+                w.DockModelSeen = s.Lamp;
+                if (s.KeeperDown && w.Tidekeeper != null) w.Tidekeeper.Alive = false;
+                if (s.Reversed) { w.TideReversed = true; w.Level.GrateOpen = true; }
+                w.RestLit = s.RestLit;
+                if (s.RestLit && w.Level.LiftLamp is Vec2 rest) w.RespawnFeet = rest;
+            }
             if (s.Chapter == Chapter.Archive)
             {
-                w.LedgerFound = s.Ledger;
                 w.DrumKey = w.Level.KeyOpen = s.DrumKey;
                 if (s.ArchivistDown && w.Archivist != null) w.Archivist.Alive = false;
                 w.OrderTaken = s.Order;
@@ -245,6 +327,7 @@ namespace DrownedBell.Core
             Boss.Reseed(Dice.Mix(Seed, 1, Deaths));
             Warden?.Reseed(Dice.Mix(Seed, 2, Deaths));
             Archivist?.Reseed(Dice.Mix(Seed, 3, Deaths));
+            Tidekeeper?.Reseed(Dice.Mix(Seed, 4, Deaths));
         }
 
         public void Emit(GameEventType type, Vec2 pos, int id = 0)
@@ -284,6 +367,7 @@ namespace DrownedBell.Core
             Interactables();
             if (Warden != null) SluiceStations(input.Up);
             if (Chapter == Chapter.Archive) SoundingArchive.Stations(this, input.Up, ref upHeld);
+            if (Chapter == Chapter.Engine) TidalEngine.Stations(this, input.Up, ref upHeld);
             ResolvePlayerAttack();
 
             foreach (Enemy e in Foes) if (e.Room == Room) e.Update(this, dt);
@@ -294,7 +378,7 @@ namespace DrownedBell.Core
             Hazards();
 
             if (Player.Health <= 0) Die();
-            bool exitOpen = Chapter == Chapter.Archive ? OrderTaken : GrateOpen && PumpKey;
+            bool exitOpen = Chapter == Chapter.Engine ? TideReversed : Chapter == Chapter.Archive ? OrderTaken : GrateOpen && PumpKey;
             if (Phase == Phase.Playing && exitOpen && Level.Outlet is Vec2 outlet && Player.Body.Box.Overlaps(LampBox(outlet)))
             {
                 Phase = Phase.Victory;
@@ -421,6 +505,7 @@ namespace DrownedBell.Core
                 connected = true;
                 Emit(GameEventType.WinchPulled, Level.Lever);
             }
+            if (Chapter == Chapter.Engine) TidalEngine.OnPlayerHit(this, hit, ref connected);
             bool pogoSpikes = Player.Attack == AttackDir.Down && Level.TouchesSpikes(hit);
             if ((connected || pogoSpikes) && !Player.SwingConnected)
             {
@@ -457,6 +542,7 @@ namespace DrownedBell.Core
                 if (e.Room != Room) continue;
                 if (e is TuningWidow tw && HitByWave(tw.Waves, pb)) return;
                 if (e is Archivist ar && HitByWave(ar.Waves, pb)) return;
+                if (e is Tidekeeper tk && HitByWave(tk.Waves, pb)) return;
             }
             foreach (RippleBell bell in RippleBells)
                 if (!bell.Harmless && HitByWave(bell.Waves, pb)) return;
@@ -550,7 +636,7 @@ namespace DrownedBell.Core
             Player.Place(RespawnFeet, Move);
             Player.Health = Player.MaxHealth;
             bossHits = 0;
-            foreach (Enemy e in Foes) if ((e != Warden && e != Archivist) || e.Alive) e.Reset();
+            foreach (Enemy e in Foes) if ((e != Warden && e != Archivist && e != Tidekeeper) || e.Alive) e.Reset();
             foreach (RippleBell bell in RippleBells) bell.Reset();
             if (!Boss.Dead) Boss.Reset();
             // Every attempt at a boss plays a new order: the death count is part of what the dice are seeded with.
