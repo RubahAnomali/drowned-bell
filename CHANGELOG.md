@@ -1,9 +1,9 @@
 # Versions
 
 - `main` is the current version. New work lands here.
-- Each release gets its own branch, `v0.1`, `v0.2` and so on, cut from `main` when that version is done.
-  A version branch is a frozen snapshot: nothing new is committed to it.
-- To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
+- Each finished version is a GitHub Release with a tag (`v0.1`, `v0.2` and so on) on the commit that finished it.
+  There are no version branches any more (the old ones became these tags).
+- To play or build an old version: `git switch --detach v0.1`. Come back with `git switch main`.
 
 ## v0.8.1 (full screen)
 

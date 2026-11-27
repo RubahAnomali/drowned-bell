@@ -4,7 +4,7 @@ A short 2D side-scrolling action demo in Unity. A small salvage diver climbs dow
 
 The diver, enemies, landmarks and room tiles use original code-authored pixel art. The title and ending share a 24-color belfry illustration. Sound is synthesized in code. The game renders at 512×288 and scales to the window with nearest-neighbor filtering.
 
-**Versions:** `main` is the current version; each finished version is kept on its own branch (`v0.1`, `v0.2`, ...). See [CHANGELOG.md](CHANGELOG.md).
+**Versions:** `main` is the current version; each finished version is a GitHub Release with a tag (`v0.1` to `v0.8.1`), listed under [Releases](https://github.com/RubahAnomali/drowned-bell/releases). There are no version branches. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Play
 
