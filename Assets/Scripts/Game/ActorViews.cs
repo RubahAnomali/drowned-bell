@@ -13,6 +13,8 @@ namespace DrownedBell.Game
         readonly Transform root, rig;
         readonly SpriteRenderer diver, tool, slash;
         readonly World w;
+        /// <summary>Where the diver is drawn this frame (QA measures how evenly it moves).</summary>
+        public Vector3 DrawnPosition => root.position;
         float pose = 1f, poseAge = 1f, time, slashAge = 9f, hurtAge = 1f;
         AttackDir slashDir;
         int slashFacing = 1;
@@ -43,7 +45,7 @@ namespace DrownedBell.Game
             time += dt;
             slashAge += dt;
             Player p = w.Player;
-            Vector3 pos = new Vector3(p.Body.Pos.X, p.Body.Pos.Y);
+            Vector3 pos = Interp.Of(p.Body);
             root.position = Art.Snap(pos);
             root.gameObject.SetActive(!dying);
             poseAge += dt;
@@ -116,7 +118,7 @@ namespace DrownedBell.Game
         {
             root.gameObject.SetActive(c.Alive);
             if (!c.Alive) return;
-            Vector3 p = new Vector3(c.Body.Pos.X, c.Body.Pos.Y);
+            Vector3 p = Interp.Of(c.Body);
             root.position = Art.Snap(p);
             int f = c.Facing;
             float wind = c.WindupProgress;
@@ -126,7 +128,7 @@ namespace DrownedBell.Game
             shell.transform.localScale = new Vector3(f * 1.875f, 1.875f * squat, 1f);
             // Front claw: raised high during the wind-up, thrust out on the lunge, dragging in recovery.
             Vector3 claw = new Vector3(f * 0.78f, -0.05f);
-            if (wind > 0f) claw = new Vector3(f * (0.75f - wind * 0.2f), -0.05f + wind * 0.55f);
+            if (wind > 0f) claw = new Vector3(f * (0.75f - wind * 0.35f), -0.05f + wind * 0.88f);
             if (lunge) claw = new Vector3(f * 1.25f, -0.1f);
             if (recover) claw = new Vector3(f * 0.85f, -0.3f);
             clawFront.transform.localPosition = claw;
@@ -162,11 +164,11 @@ namespace DrownedBell.Game
             time += dt;
             root.gameObject.SetActive(j.Alive);
             if (!j.Alive) return;
-            root.position = Art.Snap(new Vector3(j.Body.Pos.X, j.Body.Pos.Y));
+            root.position = Art.Snap(Interp.Of(j.Body));
             float wind = j.WindupProgress;
             bool spent = j.State == JellyState.Spent;
-            float swell = 1f + wind * 0.25f + (wind > 0f ? Mathf.Sin(time * 40f) * 0.03f * wind : 0f);
-            dome.transform.localScale = new Vector3(1.375f * swell, 1.375f * swell * (spent ? 0.8f : 1f), 1f);
+            float swell = 1f + Mathf.Min(wind * 1.6f, 1f) * 0.38f;
+            dome.transform.localScale = new Vector3(1.375f * swell, 1.375f * (spent ? 0.72f : 1f - wind * 0.23f), 1f);
             Color body = spent ? Palette.JellyDim : Color.white;
             dome.color = j.Flash > 0f && reducedFlashing ? Palette.JellyRing : body;
             // The tell: a faint ring at the full radius grows bolder through the wind-up.
@@ -221,7 +223,7 @@ namespace DrownedBell.Game
         {
             time += dt;
             root.gameObject.SetActive(!b.Dead || b.Fsm.Time < 2.5f);
-            Vector3 pos = new Vector3(b.Body.Pos.X, b.Body.Pos.Y);
+            Vector3 pos = Interp.Of(b.Body);
             root.position = Art.Snap(pos);
             BossState s = b.State;
             float wind = b.WindupProgress;
@@ -229,6 +231,9 @@ namespace DrownedBell.Game
             float wobble = (s == BossState.SlamRecover || s == BossState.RushRecover) ? Mathf.Sin(time * 22f) * 3f * Mathf.Exp(-b.Fsm.Time * 2f) : 0f;
             if (s == BossState.Dead) wobble = Mathf.Sin(time * 30f) * 6f * Mathf.Exp(-b.Fsm.Time);
             bell.localRotation = Quaternion.Euler(0, 0, lean + wobble);
+            float load = Mathf.Min(1f, wind * 1.6f);
+            bell.localScale = s == BossState.RainWindup ? new Vector3(1f + 0.23f * load,1f - 0.18f * load,1)
+                : s == BossState.SlamWindup ? new Vector3(1f - 0.1f * load,1f + 0.14f * load,1) : Vector3.one;
             float sway = Mathf.Sin(time * 2f) * 0.25f + (s == BossState.Rush ? -b.Facing * 0.5f : 0f);
             clapper.transform.localPosition = new Vector3(sway, -1.05f);
             Color intact = s == BossState.Dead ? new Color(0.55f, 0.55f, 0.55f, 1f) : Color.white;

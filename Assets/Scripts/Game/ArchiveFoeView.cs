@@ -4,16 +4,11 @@ using DrownedBell.Core;
 
 namespace DrownedBell.Game
 {
-    /// <summary>
-    /// PLACEHOLDER visuals for the Sounding Archive foes: plain shapes that show every gameplay tell (marks, spread,
-    /// the real clapper, ripples) so the chapter is playable and testable. The final pixel art replaces the shapes;
-    /// see docs/ARCHIVE_ART_BRIEF.md for the list. Gameplay reads only Core state, so swapping art changes nothing else.
-    /// </summary>
     sealed class ArchiveFoeView
     {
         readonly Enemy foe;
         readonly Transform parent;
-        readonly SpriteRenderer body, tell, mark, decoy, clapper, decoyMark;
+        readonly SpriteRenderer body, mark, decoy, clapper, decoyMark;
         readonly List<SpriteRenderer> waves = new List<SpriteRenderer>();
         float time;
 
@@ -21,27 +16,20 @@ namespace DrownedBell.Game
         {
             foe = enemy;
             this.parent = parent;
-            Color ink = new Color(0.16f, 0.12f, 0.22f);
-            switch (foe)
+            int row = foe is InkMoth ? 0 : foe is TuningWidow ? 1 : 2;
+            body = Art.NewSprite(enemy.Kind.ToString(), ArchiveArt.Actor(row,0), Color.white, 12, parent);
+            if (!(foe is TuningWidow))
+                mark = Art.NewSprite("landing mark", ArchiveArt.Prop(ArchiveProp.Mark), Color.white, 5, parent);
+            if (foe is Archivist)
             {
-                case InkMoth _:
-                    body = Art.NewSprite("PLACEHOLDER ink moth", Art.Dome, ink, 12, parent, 1.1f, 0.8f);
-                    mark = Art.NewSprite("moth landing mark", Art.Square, Palette.Danger, 5, parent, 1.2f, 0.125f);
-                    break;
-                case TuningWidow _:
-                    body = Art.NewSprite("PLACEHOLDER tuning widow", Art.Dome, new Color(0.35f, 0.42f, 0.5f), 12, parent, 1.5f, 1.2f);
-                    tell = Art.NewSprite("widow forks", Art.Square, Palette.Danger, 13, parent, 0.15f, 1f);
-                    break;
-                case Archivist _:
-                    body = Art.NewSprite("PLACEHOLDER Archivist", Art.Dome, ink, 12, parent, 2.4f, 2.6f);
-                    decoy = Art.NewSprite("PLACEHOLDER ink decoy", Art.Dome, ink, 11, parent, 2.4f, 2.6f);
-                    clapper = Art.NewSprite("real clapper", Art.Circle, Palette.Warm, 13, parent, 0.5f, 0.5f);
-                    mark = Art.NewSprite("real landing mark", Art.Square, Palette.Danger, 5, parent, 2.4f, 0.125f);
-                    decoyMark = Art.NewSprite("decoy landing mark", Art.Square, Palette.Danger, 5, parent, 2.4f, 0.125f);
-                    break;
+                decoy = Art.NewSprite("ink double", ArchiveArt.Actor(2,0), Color.white, 11, parent);
+                clapper = Art.NewSprite("real clapper", ArchiveArt.Prop(ArchiveProp.Clapper), Color.white, 13, parent);
+                decoyMark = Art.NewSprite("second landing mark", ArchiveArt.Prop(ArchiveProp.Mark), Color.white, 5, parent);
             }
             Tick(0f, false);
         }
+
+        static int Anticipation(float progress) => progress < 0.25f ? 4 : progress < 0.56f ? 5 : 6;
 
         SpriteRenderer Wave(int i)
         {
@@ -60,29 +48,31 @@ namespace DrownedBell.Game
         {
             time += dt;
             body.enabled = foe.Alive;
-            body.transform.position = new Vector3(foe.Body.Pos.X, foe.Body.Pos.Y - foe.Body.Half.Y);
+            Vector2 at = Interp.Of(foe.Body);
+            body.transform.position = new Vector3(at.x, at.y - foe.Body.Half.Y);
             body.flipX = foe.Facing < 0;
-            Color flash = foe.Flash > 0f && !reducedFlashing ? Palette.Text : Color.white;
+            body.color = foe.Flash > 0f && !reducedFlashing ? Palette.Warm : Color.white;
             switch (foe)
             {
                 case InkMoth moth:
                 {
-                    bool marking = moth.Alive && (moth.Beat == MothBeat.Mark || moth.Beat == MothBeat.Dive);
-                    mark.enabled = marking;
-                    mark.transform.position = new Vector3(moth.Mark.X, moth.Mark.Y + 0.06f);
-                    // Folded wings: narrower while marking; lodged: flat on the floor.
-                    float w = moth.Beat == MothBeat.Mark ? 0.7f : moth.Beat == MothBeat.Lodged ? 1.3f : 1.1f;
-                    body.transform.localScale = new Vector3(w, moth.Beat == MothBeat.Lodged ? 0.5f : 0.8f, 1f);
-                    body.color = foe.Flash > 0f && !reducedFlashing ? Palette.Text : moth.Beat == MothBeat.Lodged ? new Color(0.4f, 0.3f, 0.5f) : new Color(0.16f, 0.12f, 0.22f);
+                    mark.enabled = moth.Alive && (moth.Beat == MothBeat.Mark || moth.Beat == MothBeat.Dive);
+                    mark.transform.position = new Vector3(moth.Mark.X, moth.Mark.Y + 0.125f);
+                    mark.transform.localScale = new Vector3(0.8f, 0.65f + 0.35f * moth.MarkProgress, 1);
+                    int frame = moth.Beat == MothBeat.Mark ? Anticipation(moth.MarkProgress)
+                        : moth.Beat == MothBeat.Dive ? 7 + ((int)(moth.Elapsed * 14) & 1)
+                        : moth.Beat == MothBeat.Lodged ? 9 + Mathf.Min(2, (int)(moth.Elapsed * 4))
+                        : (int)(time * 8) % 4;
+                    body.sprite = ArchiveArt.Actor(0, frame);
                     break;
                 }
                 case TuningWidow widow:
                 {
-                    float spread = widow.Beat == WidowBeat.Spread ? widow.SpreadProgress : widow.Beat == WidowBeat.Ring ? 1f : 0f;
-                    tell.enabled = widow.Alive && spread > 0f;
-                    tell.transform.position = new Vector3(widow.Body.Pos.X, widow.Body.Pos.Y + widow.Body.Half.Y + 0.5f * spread);
-                    tell.transform.localScale = new Vector3(0.15f + 1.2f * spread, 1f, 1f);
-                    body.color = widow.Beat == WidowBeat.Recover ? new Color(0.55f, 0.6f, 0.65f) : flash * new Color(0.35f, 0.42f, 0.5f);
+                    int frame = widow.Beat == WidowBeat.Spread ? Anticipation(widow.SpreadProgress)
+                        : widow.Beat == WidowBeat.Ring ? (widow.Elapsed < 0.22f ? 7 : 8)
+                        : widow.Beat == WidowBeat.Recover ? 9 + Mathf.Min(2,(int)(widow.Elapsed * 3))
+                        : (int)(time * 3) % 4;
+                    body.sprite = ArchiveArt.Actor(1, frame);
                     DrawWaves(widow.Waves, waveHeight);
                     break;
                 }
@@ -90,17 +80,23 @@ namespace DrownedBell.Game
                 {
                     bool marking = boss.Alive && (boss.Beat == InkBeat.Mark || boss.Beat == InkBeat.Dive);
                     mark.enabled = decoyMark.enabled = marking;
-                    mark.transform.position = new Vector3(boss.RealMark.X, boss.RealMark.Y + 0.06f);
-                    decoyMark.transform.position = new Vector3(boss.DecoyMark.X, boss.DecoyMark.Y + 0.06f);
+                    mark.transform.position = new Vector3(boss.RealMark.X, boss.RealMark.Y + 0.125f);
+                    decoyMark.transform.position = new Vector3(boss.DecoyMark.X, boss.DecoyMark.Y + 0.125f);
+                    mark.transform.localScale = decoyMark.transform.localScale = new Vector3(1.6f,1,1);
+                    int frame = boss.Beat == InkBeat.Mark ? Anticipation(boss.MarkProgress)
+                        : boss.Beat == InkBeat.Dive ? 7 + ((int)(boss.Elapsed * 14) & 1)
+                        : boss.Beat == InkBeat.Recover ? 9 + Mathf.Min(2,(int)(boss.Elapsed / boss.RecoverTime * 3))
+                        : boss.Beat == InkBeat.Dormant ? 9 : (int)(time * 5) % 4;
+                    body.sprite = ArchiveArt.Actor(boss.SecondPhase ? 3 : 2, frame);
                     decoy.enabled = boss.Alive && boss.Beat == InkBeat.Mark;
                     decoy.transform.position = new Vector3(boss.DecoyMark.X, body.transform.position.y);
-                    decoy.color = new Color(0.16f, 0.12f, 0.22f, 0.85f);
-                    // The tell that separates them: only the real one swings its clapper.
+                    decoy.sprite = body.sprite;
+                    decoy.flipX = body.flipX;
+                    decoy.color = body.color;
                     clapper.enabled = boss.Alive && boss.Engaged;
-                    float swing = boss.Beat == InkBeat.Mark ? Mathf.Sin(time * 14f) * 0.6f : 0f;
-                    clapper.transform.position = new Vector3(boss.Body.Pos.X + swing, boss.Body.Pos.Y - boss.Body.Half.Y + 0.2f);
-                    body.color = boss.Beat == InkBeat.Recover ? new Color(0.3f, 0.25f, 0.4f) : flash * new Color(0.16f, 0.12f, 0.22f);
-                    if (boss.SecondPhase) body.transform.localScale = new Vector3(2.6f, 2.6f, 1f);
+                    float swing = boss.Beat == InkBeat.Mark ? Mathf.Sin(time * 14f) : 0f;
+                    clapper.transform.rotation = Quaternion.Euler(0,0,swing * 25f);
+                    clapper.transform.position = new Vector3(at.x + swing * 0.5f, body.transform.position.y + 0.29f);
                     DrawWaves(boss.Waves, waveHeight);
                     break;
                 }

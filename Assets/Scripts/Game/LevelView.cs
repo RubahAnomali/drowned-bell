@@ -17,7 +17,7 @@ namespace DrownedBell.Game
         readonly List<SpriteRenderer> grate = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> doors = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> keyDoors = new List<SpriteRenderer>();
-        // Archive placeholders (shapes only; final art is listed in docs/ARCHIVE_ART_BRIEF.md).
+        // Sounding Archive props follow their corresponding Core markers.
         SpriteRenderer ledger, drumKey, order, chuteLight;
         readonly SpriteRenderer lampFlame, lampGlow, winchArm, winchGlow, lung, lungGlow;
         readonly List<SpriteRenderer> archGlows = new List<SpriteRenderer>();
@@ -40,8 +40,8 @@ namespace DrownedBell.Game
                 SpriteRenderer shell;
                 if (bell.Echo)
                 {
-                    // PLACEHOLDER echo drum: grey for the harmless practice drum, warm for a live one.
-                    shell = Art.NewSprite("PLACEHOLDER echo drum", Art.Circle, bell.Harmless ? Palette.RockEdge : Palette.WarmDeep, 4, Root, 1.2f, 1.2f);
+                    // echo drum: grey for the harmless practice drum, warm for a live one.
+                    shell = Art.NewSprite("echo drum", ArchiveArt.Prop(bell.Harmless ? ArchiveProp.PracticeDrum : ArchiveProp.LiveDrum), Color.white, 4, Root);
                     shell.transform.position = p + new Vector3(0, 0.6f);
                 }
                 else
@@ -77,7 +77,7 @@ namespace DrownedBell.Game
                     Tile t = lv.At(x, y);
                     if (t == Tile.KeyDoor)
                     {
-                        var bars = Art.NewSprite("drum-key door", Art.Square, Palette.Warm, 2, Root, 0.5f, 1f);
+                        var bars = Art.NewSprite("drum-key door", ArchiveArt.Prop(ArchiveProp.Bars), Color.white, 2, Root);
                         bars.transform.position = new Vector3(x + 0.5f, y + 0.5f);
                         keyDoors.Add(bars);
                         continue;
@@ -99,7 +99,7 @@ namespace DrownedBell.Game
 
             // Winch: opens the grate. A warm wheel so it reads as "interactable, part of the way forward".
             Vector3 wn = V(lv.Lever);
-            var wheel = Art.NewSprite("winch", PixelArt.Winch, Color.white, 3, Root);
+            var wheel = Art.NewSprite("winch", lv.Chapter == Chapter.Archive ? ArchiveArt.Prop(ArchiveProp.Weight) : PixelArt.Winch, Color.white, 3, Root);
             wheel.transform.position = wn + new Vector3(0, 0.7f);
             winchArm = Art.NewSprite("winchArm", Art.Square, Palette.WarmDeep, 4, Root, 0.12f, 0.8f);
             winchArm.transform.position = wn + new Vector3(0, 0.7f);
@@ -116,7 +116,7 @@ namespace DrownedBell.Game
                 lung.transform.position = lg + new Vector3(0, 0.5f);
             }
             if (lv.Chapter == Chapter.Sluice && lv.Outlet is Vec2 outlet) BuildSluiceFixtures(outlet);
-            if (lv.Chapter == Chapter.Archive) BuildArchivePlaceholders();
+            if (lv.Chapter == Chapter.Archive) BuildArchiveFixtures();
 
             // Warm arch lamps flank the drop into the bell's chamber.
             foreach (Vec2 a in lv.ArchLamps)
@@ -197,18 +197,18 @@ namespace DrownedBell.Game
             hatch.transform.position = V(outlet) + new Vector3(0, 1.5f);
         }
 
-        void BuildArchivePlaceholders()
+        void BuildArchiveFixtures()
         {
-            ledger = Art.NewSprite("PLACEHOLDER keeper ledger", Art.Square, Palette.Warm, 8, Root, 0.6f, 0.45f);
+            ledger = Art.NewSprite("keeper ledger", ArchiveArt.Prop(ArchiveProp.Ledger), Color.white, 8, Root);
             ledger.transform.position = V(lv.Record.Value) + new Vector3(0, 0.5f);
-            drumKey = Art.NewSprite("PLACEHOLDER drum key", Art.Circle, Palette.Warm, 12, Root, 0.45f, 0.45f);
+            drumKey = Art.NewSprite("drum key", ArchiveArt.Prop(ArchiveProp.Key), Color.white, 12, Root);
             drumKey.transform.position = V(world.Widow.Body.Feet) + new Vector3(0, 0.6f);
-            order = Art.NewSprite("PLACEHOLDER sea-gate order", Art.Square, Palette.Text, 12, Root, 0.7f, 0.35f);
-            var chute = Art.NewSprite("PLACEHOLDER chute sill", Art.Square, Palette.RockEdge, 3, Root, 2f, 0.2f);
+            order = Art.NewSprite("sea-gate order", ArchiveArt.Prop(ArchiveProp.Order), Color.white, 12, Root);
+            var chute = Art.NewSprite("chute sill", ArchiveArt.Prop(ArchiveProp.Sill), Color.white, 3, Root);
             chute.transform.position = V(SoundingArchive.ChuteStop) + new Vector3(0, 0.1f);
-            chuteLight = Art.NewSprite("PLACEHOLDER chute light", Art.Square, Palette.Warm, 4, Root, 0.3f, 0.3f);
+            chuteLight = Art.NewSprite("chute light", ArchiveArt.Prop(ArchiveProp.Lamp), Color.white, 4, Root);
             chuteLight.transform.position = V(SoundingArchive.ChuteStop) + new Vector3(0, 1.2f);
-            var exit = Art.NewSprite("PLACEHOLDER engine-room exit", Art.Square, Palette.WarmDeep, -1, Root, 1.6f, 2.4f);
+            var exit = Art.NewSprite("engine-room exit", ArchiveArt.Prop(ArchiveProp.Exit), Color.white, -1, Root);
             exit.transform.position = V(lv.Outlet.Value) + new Vector3(0, 1.2f);
         }
 
@@ -267,6 +267,31 @@ namespace DrownedBell.Game
                     bg.Quad(vent.X - 0.375f, y - 0.375f, vent.X + 0.375f, y, Palette.Pillar);
                 }
             }
+            if (lv.Chapter == Chapter.Archive)
+            {
+                for (float x = r.MinX + 2; x + 5 < r.MaxX; x += 7)
+                {
+                    for (float y = r.MinY + 3; y + 6 < r.MaxY; y += 8)
+                    {
+                        // Green-glass lancet and a pair of suspended catalogue shelves.
+                        bg.Quad(x + 1, y + 2, x + 4, y + 5, Palette.Hex(0x23413e));
+                        bg.Quad(x + 1.5f, y + 5, x + 3.5f, y + 5.5f, Palette.Hex(0x23413e));
+                        bg.Quad(x + 2.375f,y + 2,x + 2.5625f,y + 5.5f, Palette.Pillar);
+                        for (int tier = 0; tier < 2; tier++)
+                        {
+                            float shelf = y + tier * 2f;
+                            bg.Quad(x,shelf,x+5,shelf+0.1875f,Palette.RockSide);
+                            for (int book = 0; book < 9; book++)
+                            {
+                                float spine = x + 0.25f + book * 0.5f;
+                                float top = shelf + 0.75f + (book * 7 + tier * 3) % 5 * 0.125f;
+                                bg.Quad(spine,shelf+0.1875f,spine+0.375f,top,book % 3 == 0 ? Palette.Hex(0x354344) : Palette.Pillar);
+                                bg.Quad(spine,top-0.1875f,spine+0.25f,top-0.125f,Palette.RockSide);
+                            }
+                        }
+                    }
+                }
+            }
             bg.Build("backdrop " + r.Name, Root, -20);
 
             var mb = new Art.MeshBuilder();
@@ -291,6 +316,11 @@ namespace DrownedBell.Game
                     }
                     else if (t == Tile.OneWay)
                     {
+                        if (lv.Chapter == Chapter.Archive)
+                        {
+                            mb.Quad(x, y + 0.625f, x + 1, y + 0.75f, Palette.RockSide);
+                            mb.Quad(x + 0.625f,y + 0.5f,x + 0.8125f,y + 0.75f,Palette.BellRim);
+                        }
                         mb.Quad(x, y + 0.75f, x + 1, y + 1, Palette.LedgeUnder);
                         mb.Quad(x, y + 0.9375f, x + 1, y + 1, Palette.Ledge);
                         mb.Quad(x + 0.125f, y + 0.4375f, x + 0.25f, y + 0.75f, Palette.LedgeUnder);

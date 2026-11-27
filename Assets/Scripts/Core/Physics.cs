@@ -6,6 +6,8 @@ namespace DrownedBell.Core
     public sealed class Body
     {
         public Vec2 Pos;
+        /// <summary>Where the body stood at the start of the last simulation step. Only the renderer reads it, to draw smoothly between the 60 Hz steps.</summary>
+        public Vec2 Prev;
         public Vec2 Vel;
         public Vec2 Half;
         public bool Grounded;
@@ -17,9 +19,12 @@ namespace DrownedBell.Core
 
         public Body(Vec2 pos, float w, float h)
         {
-            Pos = pos;
+            Pos = Prev = pos;
             Half = new Vec2(w * 0.5f, h * 0.5f);
         }
+
+        /// <summary>The position `alpha` of the way from the last step to this one (0 = Prev, 1 = Pos).</summary>
+        public Vec2 Lerp(float alpha) => Prev + (Pos - Prev) * alpha;
 
         public Aabb Box => new Aabb(Pos, Half);
         public float Bottom => Pos.Y - Half.Y;

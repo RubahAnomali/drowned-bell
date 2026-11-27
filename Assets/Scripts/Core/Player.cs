@@ -57,7 +57,7 @@ namespace DrownedBell.Core
 
         public void Place(Vec2 feet, MovementTuning m)
         {
-            Body.Pos = new Vec2(feet.X, feet.Y + m.Height * 0.5f + 0.001f);
+            Body.Pos = Body.Prev = new Vec2(feet.X, feet.Y + m.Height * 0.5f + 0.001f);
             Body.Vel = new Vec2(0, 0);
             Body.DropThrough = 0f;
             Stun = Invuln = 0f;

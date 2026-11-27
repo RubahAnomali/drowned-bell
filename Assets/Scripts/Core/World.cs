@@ -232,6 +232,10 @@ namespace DrownedBell.Core
 
         public void Update(float dt, PlayerInput input)
         {
+            // Remember where everything stood before this step, so the renderer can blend between steps.
+            Player.Body.Prev = Player.Body.Pos;
+            Boss.Body.Prev = Boss.Body.Pos;
+            foreach (Enemy e in Foes) e.Body.Prev = e.Body.Pos;
             if (Phase == Phase.Dying)
             {
                 phaseTimer -= dt;

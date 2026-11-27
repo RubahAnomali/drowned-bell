@@ -113,7 +113,7 @@ namespace DrownedBell.Core
 
         public void Reset()
         {
-            Body.Pos = home;
+            Body.Pos = Body.Prev = home;
             Body.Vel = new Vec2(0, 0);
             Health = MaxHealth = t.Health;
             Facing = -1;

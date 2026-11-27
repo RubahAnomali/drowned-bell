@@ -25,6 +25,9 @@ namespace DrownedBell.Game
         readonly Queue<string> shotQueue = new Queue<string>();
         readonly HashSet<string> taken = new HashSet<string>();
         int victories, deaths;
+        // Smoothness: how far the drawn diver moves each rendered frame while running steadily.
+        float lastDrawnX = float.NaN, maxStepPx, minStepPx = float.MaxValue, sumStepPx;
+        int steadyFrames, stalledFrames;
         float realStart;
 
         public static void AttachIfRequested(GameController game)
@@ -37,6 +40,7 @@ namespace DrownedBell.Game
             var ap = game.gameObject.AddComponent<AutoPlay>();
             ap.game = game;
             ap.dir = args[i + 1];
+            ap.smoothOnly = Array.IndexOf(args, "-smoothtest") >= 0;
             int r = Array.IndexOf(args, "-retries");
             if (r >= 0 && r + 1 < args.Length && int.TryParse(args[r + 1], out int n)) ap.retries = n;
             int f = Array.IndexOf(args, "-frames");
@@ -48,6 +52,8 @@ namespace DrownedBell.Game
         /// (for the portfolio clip: ffmpeg -framerate 30 -i f%05d.png). Capture time does not slow the game down.
         /// </summary>
         string framesDir;
+        /// <summary>-smoothtest: walk the first rooms for a while, write the smoothness line and quit.</summary>
+        bool smoothOnly;
         bool recording;
 
         IEnumerator Record()
@@ -102,6 +108,8 @@ namespace DrownedBell.Game
             float[] samples = new float[256];
             while (Time.realtimeSinceStartup < giveUp)
             {
+                MeasureSmoothness(w);
+                if (smoothOnly && Time.realtimeSinceStartup - realStart > 40f) break;
                 AudioListener.GetOutputData(samples, 0);
                 foreach (float sample in samples) audioPeak = Mathf.Max(audioPeak, Mathf.Abs(sample));
                 if (w.Boss.Awake && !w.Boss.Dead && w.Phase == Phase.Playing)
@@ -161,6 +169,7 @@ namespace DrownedBell.Game
                             retrySeconds = intake.Time - respawnAt;
                         return SluiceWorks.RouteInput(intake);
                     });
+                    bool filmWindups = Array.IndexOf(Environment.GetCommandLineArgs(), "-windup-preview") >= 0;
                     var seenBeats = new HashSet<string>();
                     int lastRoom = -1;
                     float intakeDeadline = Time.realtimeSinceStartup + 180f;
@@ -170,7 +179,16 @@ namespace DrownedBell.Game
                         {
                             if (!(foe is PumpMachine m) || !m.Alive || m.Room != intake.Room || !m.Engaged) continue;
                             string name = m.Kind + "_" + m.Beat + (m.SecondPhase ? "_surge" : "");
+                            if (filmWindups && (m.Beat == MachineBeat.Brace || m.Beat == MachineBeat.Strike || m.Beat == MachineBeat.Mark || m.Beat == MachineBeat.Jet))
+                                name += "_" + Mathf.FloorToInt(m.Elapsed * 12f).ToString("00");
                             if (seenBeats.Add(name)) yield return Capture("works_" + name);
+                            if (filmWindups && m.IsWarden && (m.Beat == MachineBeat.Jet || m.Beat == MachineBeat.Strike) &&
+                                seenBeats.Add("inspector_" + m.Beat))
+                            {
+                                game.TourDebug(true);
+                                yield return Capture("inspector_warden_" + m.Beat);
+                                game.TourDebug(false);
+                            }
                         }
                         if (lastRoom != intake.Room)
                         {
@@ -202,7 +220,19 @@ namespace DrownedBell.Game
                             string beat = foe is Archivist ar && ar.Engaged ? "archivist_" + ar.Beat + (ar.SecondPhase ? "_phase2" : "")
                                 : foe is TuningWidow tw && tw.Beat != WidowBeat.Idle ? "widow_" + tw.Beat
                                 : foe is InkMoth im && im.Beat != MothBeat.Hover ? "moth_" + im.Beat : null;
+                            if (beat != null && filmWindups)
+                            {
+                                float elapsed = foe is Archivist a ? a.Elapsed : foe is TuningWidow v ? v.Elapsed : ((InkMoth)foe).Elapsed;
+                                beat += "_" + Mathf.FloorToInt(Mathf.Min(elapsed,1.5f) * 10f).ToString("00");
+                            }
                             if (beat != null && archiveBeats.Add(beat)) yield return Capture(beat);
+                            if (filmWindups && foe is InkMoth diving && diving.Beat == MothBeat.Dive &&
+                                archiveBeats.Add("inspector_dive"))
+                            {
+                                game.TourDebug(true);
+                                yield return Capture("inspector_moth_dive");
+                                game.TourDebug(false);
+                            }
                         }
                         yield return null;
                     }
@@ -221,9 +251,32 @@ namespace DrownedBell.Game
                 }
                 yield return null;
             }
+            if (steadyFrames > 30)
+                report.Add($"smoothness: {steadyFrames} steady-run frames at {Application.targetFrameRate} target fps, vsync {QualitySettings.vSyncCount}; drawn diver moved {minStepPx:0.0} to {maxStepPx:0.0} px per frame (mean {sumStepPx / steadyFrames:0.00}), {stalledFrames} frames repeated the same position");
             report.Add($"audio output peak {audioPeak:F4}, boss average {combatFrames / Mathf.Max(combatSeconds, 0.001f):F1} fps, longest frame {longestCombatFrame * 1000f:F0} ms");
             WriteReport(w);
             Application.Quit();
+        }
+
+        /// <summary>While the diver runs flat out on the ground, record how many pixels the drawn sprite moves each frame.</summary>
+        void MeasureSmoothness(World w)
+        {
+            Body b = w.Player.Body;
+            float x = game.DrawnDiver.x;
+            bool steady = b.Grounded && !w.Player.Dashing && !w.Player.Attacking && Mathf.Abs(b.Vel.X) > 8f && w.Phase == Phase.Playing;
+            if (steady && !float.IsNaN(lastDrawnX))
+            {
+                float px = Mathf.Abs(x - lastDrawnX) * 16f;
+                if (px < 8f)
+                {
+                    steadyFrames++;
+                    sumStepPx += px;
+                    maxStepPx = Mathf.Max(maxStepPx, px);
+                    minStepPx = Mathf.Min(minStepPx, px);
+                    if (px < 0.01f) stalledFrames++;
+                }
+            }
+            lastDrawnX = x;
         }
 
         void OnEvent(World w, GameEvent e)

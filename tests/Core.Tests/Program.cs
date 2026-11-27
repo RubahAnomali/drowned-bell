@@ -58,6 +58,7 @@ internal static class Program
         SaveChecks();
         ArchiveChecks.Run(Ok);
         BossDesignChecks.Run(Ok);
+        SmoothnessChecks.Run(Ok);
         Route();
         LevelPlanChecks.Run(Ok);
         Pilot();

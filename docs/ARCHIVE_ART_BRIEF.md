@@ -1,6 +1,6 @@
 # Sounding Archive art brief (for the art pass)
 
-Chapter III's mechanics are finished and tested. Everything visual in it is a **placeholder** made of plain shapes (`Art.Square`, `Art.Circle`, `Art.Dome`). This brief lists every placeholder that needs real pixel art. Follow `docs/ART_DIRECTION.md` (palette, 16 px per tile, point sampling, bottom-centre anchors, no mipmaps) and match the Sluice Works pass (`PumpMachines.png` + `PumpMachineView.cs`).
+The original production brief below is retained for reference. The actor sheets, room kit, chapter portrait, fixtures and pickups are now implemented. The files and native dimensions are recorded in `docs/asset-manifest.json`.
 
 **Rule:** art may change how things look, never where they are or when they happen. Gameplay reads only `Assets/Scripts/Core`; hit boxes, timings and marks come from there. If a sprite's bright attack edge does not line up with the hit box shown by the F1 inspector, the sprite is wrong, not the box. Do not edit files under `Assets/Scripts/Core` or the tests.
 

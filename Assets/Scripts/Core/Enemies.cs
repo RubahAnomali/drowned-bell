@@ -43,7 +43,7 @@ namespace DrownedBell.Core
 
         public virtual void Reset()
         {
-            Body.Pos = Home;
+            Body.Pos = Body.Prev = Home;
             Body.Vel = new Vec2(0, 0);
             Health = MaxHealth;
             Alive = true;

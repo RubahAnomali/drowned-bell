@@ -5,6 +5,17 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.6 (Archive art and smooth movement)
+
+- The Sounding Archive has its final pixel art (from the art pass): bookshelf rooms with green-glass niches, the
+  Ink Moth, Tuning Widow and Archivist with its swinging clapper, echo drums, keeper ledger, chute and key door,
+  a chapter plate for the title and ending, and redrawn Warden poses.
+- Smoother movement: the game steps at 60 Hz while the screen draws at 144, 75 or 60 Hz, which made motion judder.
+  Every sprite and the camera are now drawn between the last two steps, the camera look-ahead eases by time instead
+  of by frame, and the Windows build uses vsync. Game rules, jump distances and the level design are unchanged.
+  Measured in the real build at 144 Hz: before, the diver stood still on 58% of frames and jumped up to 5 px in
+  one; now it moves 0 to 2 px per frame, and the only repeated frames are the pixel grid's own 9%.
+
 ## v0.5 (harder bosses)
 
 - All three bosses hardened to Dark Souls difficulty, and kept fair: heavy hits (a boss body hit costs 2 of 5 masks),

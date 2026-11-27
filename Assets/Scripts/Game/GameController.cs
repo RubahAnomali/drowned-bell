@@ -38,13 +38,15 @@ namespace DrownedBell.Game
         readonly GameInput input = new GameInput();
         Camera cam;
         RenderTexture pixelFrame;
-        Texture2D belfry;
+        Texture2D belfry, archivePlate;
         const int PixelWidth = 512, PixelHeight = 288;
         Flow flow = Flow.Title;
         float acc, hitStop, shake, fade, bannerTime, stepClock, lookX;
         float shakeTime, shakeStrength;
         bool reducedFlashing;
         bool automatedTour;
+        /// <summary>QA only (-nointerp): draw the latest step with no blending, the way the game used to, to compare smoothness.</summary>
+        readonly bool noInterpolation = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-nointerp") >= 0;
         string banner = "", bannerSub = "";
         bool debug;
         bool[] roomSeen;
@@ -60,6 +62,7 @@ namespace DrownedBell.Game
         void Awake()
         {
             belfry = Resources.Load<Texture2D>("Belfry");
+            archivePlate = Resources.Load<Texture2D>("ArchivePlate");
             cam = Camera.main;
             if (cam == null)
             {
@@ -91,7 +94,9 @@ namespace DrownedBell.Game
             shakeStrength = PlayerPrefs.GetFloat("ShakeStrength", 1f);
             reducedFlashing = PlayerPrefs.GetInt("ReducedFlashing", 0) != 0;
             // In a browser, -1 follows the display's refresh; a fixed rate there would drop requestAnimationFrame.
-            Application.targetFrameRate = GameInput.Web ? -1 : 120;
+            // One frame per screen refresh keeps the pacing even; the fixed-step blend (Interp) hides the 60 Hz steps.
+            if (!GameInput.Web) QualitySettings.vSyncCount = 1;
+            Application.targetFrameRate = GameInput.Web ? -1 : 144;
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-testroom") >= 0)
                 BeginTestRoom();
             else
@@ -137,6 +142,7 @@ namespace DrownedBell.Game
 
         // ---- hooks for the -autoshot verification tour ----------------------------------------
         public World CurrentWorld => world;
+        internal Vector3 DrawnDiver => playerView.DrawnPosition;
         public void BeginForTour() { automatedTour = true; flow = Flow.Playing; audioSynth.SetMuted(true); input.Clear(); }
         public void BeginAutoplay()
         {
@@ -434,6 +440,8 @@ namespace DrownedBell.Game
         void LateUpdate()
         {
             float dt = Time.deltaTime;
+            // How far into the next 60 Hz step real time has got: everything is drawn that far between the last two steps.
+            Interp.Alpha = noInterpolation ? 1f : Mathf.Clamp01(acc / World.FixedDt);
             bool dying = world.Phase == Phase.Dying;
             levelView.Tick(dt);
             playerView.Tick(dt, dying, reducedFlashing);
@@ -446,7 +454,7 @@ namespace DrownedBell.Game
 
             fade = Mathf.MoveTowards(fade, dying ? 1f : 0f, dt * (dying ? 1.3f : 2.5f));
             cam.orthographicSize = cameraSize;
-            Vector3 target = Target(false);
+            Vector3 target = Target(false, dt);
             camPos = Vector3.Lerp(camPos, target, 1f - Mathf.Exp(-dt * cameraSmoothing));
             shakeTime += Time.unscaledDeltaTime;
             shake = Mathf.Max(0f, shake - Time.unscaledDeltaTime * 1.8f);
@@ -458,12 +466,13 @@ namespace DrownedBell.Game
         }
 
         /// <summary>Follow the diver with a little look-ahead, clamped so the camera never shows outside the current room.</summary>
-        Vector3 Target(bool snap)
+        Vector3 Target(bool snap, float dt = 0f)
         {
-            Body b = world.Player.Body;
+            Vector2 b = Interp.Of(world.Player.Body);
             if (snap) lookX = 0f;
-            lookX = Mathf.Lerp(lookX, world.Player.Facing * lookAhead, snap ? 1f : 0.04f);
-            float x = b.Pos.X + lookX, y = b.Pos.Y + 1f;
+            // Time-based, so the look-ahead eases the same at 60 and 144 fps (it used to be a fixed fraction per frame).
+            lookX = Mathf.Lerp(lookX, world.Player.Facing * lookAhead, snap ? 1f : 1f - Mathf.Exp(-dt * 2.45f));
+            float x = b.x + lookX, y = b.y + 1f;
             int ri = world.Room;
             if (ri >= 0)
             {
@@ -572,6 +581,14 @@ namespace DrownedBell.Game
                     Overlay("PAUSED", "Esc, Enter or click to resume." + (GameInput.Web ? "" : "   Q to quit."),
                         (testTarget != null ? "T returns to the title.\n" : "Down-swing in the air to bounce off enemies and spikes.\n") +
                         $"1 camera shake {shakeStrength:P0}   2 reduced flashing {(reducedFlashing ? "on" : "off")}");
+                    if (world.LedgerFound && world.Chapter == Chapter.Archive)
+                    {
+                        Sprite page = ArchiveArt.Prop(ArchiveProp.LedgerDetail);
+                        Rect uv = page.rect;
+                        GUI.DrawTextureWithTexCoords(new Rect(235,204,42,38),page.texture,
+                            new Rect(uv.x/page.texture.width,uv.y/page.texture.height,uv.width/page.texture.width,uv.height/page.texture.height));
+                        Label(new Rect(190,246,132,14), "Keeper ledger", mid, Palette.TextDim);
+                    }
                     break;
                 case Flow.Victory:
                     DrawBookend(true);
@@ -584,7 +601,8 @@ namespace DrownedBell.Game
         void DrawBookend(bool victory)
         {
             Box(new Rect(0, 0, PixelWidth, PixelHeight), Palette.SkyBottom);
-            GUI.DrawTexture(new Rect(320, 0, 192, 288), belfry);
+            bool archiveArt = victory ? world.Chapter != Chapter.Belfry : save != null && save.Chapter == Chapter.Archive;
+            GUI.DrawTexture(new Rect(320, 0, 192, 288), archiveArt ? archivePlate : belfry);
             Box(new Rect(319, 0, 1, 288), Palette.RockSide);
             bool outlet = world.Chapter != Chapter.Belfry;
             bool final = world.Chapter == Chapter.Archive;

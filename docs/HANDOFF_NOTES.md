@@ -1,5 +1,9 @@
 # Drowned Bell handoff notes
 
+## Art and smooth movement, 27 November 2026 (v0.6)
+
+The art pass for the Archive and the Warden is in (`Game/ArchiveArt.cs`, `Resources/Archive*.png`, `WardenPoses.png`; see `docs/ART_DIRECTION.md` and the manifest). Smooth movement: `Body.Prev` is set at the start of every `World.Update`; every view draws `Interp.Of(body)` (`Game/Interp.cs`), alpha = the part of a step elapsed (`GameController.LateUpdate`). Core rules never read `Prev`. QA: `SmoothnessChecks.cs` (headless) and `-autoplay <dir> -smoothtest [-nointerp]` (real build; the report's `smoothness:` line). If you add a moving thing, draw it through `Interp.Of`.
+
 ## Harder bosses, 27 November 2026 (v0.5)
 
 The three bosses are hardened; read `docs/BOSS_DESIGN.md` first. Tuning: `BossTuning` (and `Main.unity`, which `SceneTuning` keeps equal to the code) for the Undertoll; constants and properties in `PumpMachinery.cs` for the Warden and `ArchiveFoes.cs` for the Archivist. Damage: `Enemy.ContactDamage` and `AttackDamage`, `BossTuning.ContactDamage`; healing: `World.BossHitLanded` and `BossTuning.HealEveryHits`. The scripted divers got smarter: `Autopilot.BossFight` (crosses a recovering bell, never ends a recovery inside it), `SluiceWorks.WardenTactic`, and the Archivist branch of `SoundingArchive.RouteInput`. `BossDesignChecks.cs` holds the hard/fair rules and `BossDifficulty.cs` the reader/greedy/idle fights. Art is unaffected: lanes draw from `AttackLane`, so the wide and tracked jets already show.

@@ -342,10 +342,12 @@
       "status": "implemented",
       "technical": {
         "dimensions": "24x24",
-        "frames": 4,
+        "frames": 6,
         "alpha": true,
         "filtering": "nearest",
-        "anchor": "bottom center"
+        "anchor": "bottom center",
+        "windup_frames": 3,
+        "windup_canvas": "40x40, shared bottom-center anchor"
       },
       "source": {
         "kind": "original pixel artwork",
@@ -362,10 +364,12 @@
       "status": "implemented",
       "technical": {
         "dimensions": "28x28",
-        "frames": 4,
+        "frames": 6,
         "alpha": true,
         "filtering": "nearest",
-        "anchor": "bottom center"
+        "anchor": "bottom center",
+        "windup_frames": 3,
+        "windup_canvas": "40x40, shared bottom-center anchor"
       },
       "source": {
         "kind": "original pixel artwork",
@@ -429,6 +433,86 @@
       },
       "source": {
         "kind": "original pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "warden-attack-poses",
+      "role": "Tall chimney lift and low cross-body sweep",
+      "path": "Assets/Resources/WardenPoses.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "320x160",
+        "frames": 8,
+        "alpha": true,
+        "filtering": "nearest",
+        "notes": "Two rows of four 80 px cells, 16 px per tile; bottom-center pivot."
+      },
+      "source": {
+        "kind": "original project pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "archive-actors",
+      "role": "Ink Moth, Tuning Widow, Archivist and torn phase-two double",
+      "path": "Assets/Resources/ArchiveActors.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "768x256",
+        "frames": 48,
+        "alpha": true,
+        "filtering": "nearest",
+        "notes": "Four rows of twelve 64 px cells, including the phase-two costume. Real and decoy share the same frame."
+      },
+      "source": {
+        "kind": "original project pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "archive-fixtures",
+      "role": "Recording drums, keeper ledger, inspection drawing, key, order, chute, light, hatch, bars, weight, clapper and landing mark",
+      "path": "Assets/Resources/ArchiveObjects.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "512x128",
+        "frames": 13,
+        "alpha": true,
+        "filtering": "nearest",
+        "notes": "Thirteen variable-size drawings in 64 px cells. The two landing marks share one drawing."
+      },
+      "source": {
+        "kind": "original project pixel artwork",
+        "license": "project-original"
+      },
+      "verification": {
+        "technical_checks_passed": true
+      }
+    },
+    {
+      "id": "archive-chapter-plate",
+      "role": "Suspended keeper ledger in the green-glass recording choir",
+      "path": "Assets/Resources/ArchivePlate.png",
+      "status": "implemented",
+      "technical": {
+        "dimensions": "192x288",
+        "frames": 1,
+        "alpha": false,
+        "filtering": "nearest",
+        "notes": "10-color native-resolution portrait, used at chapter transition and finale and for an Archive continue."
+      },
+      "source": {
+        "kind": "original project pixel artwork",
         "license": "project-original"
       },
       "verification": {

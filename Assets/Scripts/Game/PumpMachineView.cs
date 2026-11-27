@@ -6,6 +6,8 @@ namespace DrownedBell.Game
     sealed class PumpMachineView
     {
         static Sprite[,] poses;
+        static Sprite[,] windups;
+        static Sprite[,] wardenPoses;
         readonly PumpMachine actor;
         readonly SpriteRenderer body, lane, surge;
         readonly SpriteRenderer[] links = new SpriteRenderer[8];
@@ -19,6 +21,15 @@ namespace DrownedBell.Game
             {
                 var sheet = Resources.Load<Texture2D>("PumpMachines");
                 poses = new Sprite[3, 4];
+                windups = new Sprite[2, 3];
+                int[] windupColumns = { 1, 4, 5 };
+                for (int r = 0; r < 2; r++)
+                    for (int f = 0; f < windupColumns.Length; f++)
+                    {
+                        // Wider canvas gives the hauling chain room to swing behind the porter.
+                        var rect = new Rect(windupColumns[f] * 64 + 12, (2 - r) * 64, 40, 40);
+                        windups[r, f] = Sprite.Create(sheet, rect, new Vector2(0.5f, 0), 16f, 0, SpriteMeshType.FullRect);
+                    }
                 int[] sizes = { 24, 28, 56 };
                 for (int r = 0; r < 3; r++)
                     for (int f = 0; f < 4; f++)
@@ -27,6 +38,15 @@ namespace DrownedBell.Game
                         var rect = new Rect(f * 64 + (64 - n) / 2, (2 - r) * 64, n, n);
                         poses[r, f] = Sprite.Create(sheet, rect, new Vector2(0.5f, 0), 16f, 0, SpriteMeshType.FullRect);
                     }
+            }
+            if (machine.IsWarden && wardenPoses == null)
+            {
+                var sheet = Resources.Load<Texture2D>("WardenPoses");
+                wardenPoses = new Sprite[2,4];
+                for (int attack = 0; attack < 2; attack++)
+                    for (int f = 0; f < 4; f++)
+                        wardenPoses[attack,f] = Sprite.Create(sheet, new Rect(f*80,(1-attack)*80,80,80),
+                            new Vector2(0.5f,0),16f,0,SpriteMeshType.FullRect);
             }
             body = Art.NewSprite(actor.Kind.ToString(), poses[row, 0], Color.white, 12, parent);
             body.transform.position = new Vector3(actor.Home.X, actor.Body.Bottom);
@@ -52,6 +72,18 @@ namespace DrownedBell.Game
             bool live = beat == MachineBeat.Jet || beat == MachineBeat.Strike;
             body.enabled = actor.Alive;
             body.sprite = poses[row, warning ? 1 : live ? 2 : beat == MachineBeat.Recover ? 3 : 0];
+            if (beat == MachineBeat.Brace && !actor.IsWarden)
+            {
+                int frame = actor.Elapsed < 0.16f ? 0 : actor.Elapsed < 0.38f ? 1 : 2;
+                body.sprite = windups[row, frame];
+            }
+            if (actor.IsWarden && (warning || live))
+            {
+                bool vent = beat == MachineBeat.Mark || beat == MachineBeat.Jet;
+                float progress = actor.Elapsed / (vent ? actor.MarkTime : actor.BraceTime);
+                int frame = live ? 3 : progress < 0.25f ? 0 : progress < 0.58f ? 1 : 2;
+                body.sprite = wardenPoses[vent ? 0 : 1,frame];
+            }
             body.flipX = actor.Facing < 0;
             body.color = actor.Flash > 0 && !reducedFlashing ? Palette.Text : Color.white;
             surge.enabled = actor.Alive && actor.SecondPhase;
