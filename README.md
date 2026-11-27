@@ -9,7 +9,8 @@ The diver, enemies, landmarks and room tiles use original code-authored pixel ar
 ## Play
 
 - **Windows download:** extract `Builds/Drowned-Bell-Archive-Art-Windows-x64.zip` and open `Drowned Bell/DrownedBell.exe`. The folder includes the Unity runtime and a short controls guide. The unpackaged release player is `Builds/ArchiveArt/DrownedBell.exe`. For a new download, use **Drowned Bell > Build Windows** in Unity and then run `python tools/package_windows.py --output Builds/Drowned-Bell-Archive-Art-Windows-x64.zip` from the project root.
-- **In the browser (v0.3, both chapters, saves in the browser):** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
+- **In the browser (v0.8.1, all four chapters, saves in the browser):** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
+- **Windows full screen:** the Windows build starts full screen (borderless) with the mouse cursor hidden. The QA modes stay windowed. The newest player is `Builds/Windows/DrownedBell.exe` after **Drowned Bell > Build Windows**; the zip above is an older art-review package.
 - **In the editor:** Unity 6.6 (6000.6.10f1). Open `Assets/Scenes/Main.unity` and press Play. Any other scene also works, because `Bootstrap` creates the game if the scene has none.
 
 | Action | Keys |
@@ -28,7 +29,18 @@ The diver, enemies, landmarks and room tiles use original code-authored pixel ar
 
 The bosses are built to be hard but fair (see [docs/BOSS_DESIGN.md](docs/BOSS_DESIGN.md)): a direct hit costs two masks, and every 7 hook hits on a boss mend one. A down-swing in the air bounces off enemies and spikes (pogo) and gives back the air dash. When the bell rises for a slam, you can run underneath it to the open side.
 
-Progress saves itself at lamps and the lift, pickups, opened shortcuts, boss clears and every respawn. Continue wakes you at the last lamp or lift with full health. One save slot: `drowned-bell-save.txt` in Unity's persistent data folder (on Windows, `%USERPROFILE%\AppData\LocalLow\RubahAnomali\Drowned Bell`; in the browser, the site's local storage). Reaching the end of the current build clears it. QA runs (`-autoplay`, `-autoshot`) never read or write it.
+Progress saves itself at lamps and the lift, pickups, opened shortcuts, boss clears and every respawn. Continue wakes you at the last lamp or lift with full health. One save slot: `drowned-bell-save.txt` in Unity's persistent data folder (on Windows, `%USERPROFILE%\AppData\LocalLow\RubahAnomali\Drowned Bell`; in the browser, the site's local storage). Finishing the Tidal Engine (the end of the campaign) clears it, so the next dive starts fresh. QA runs (`-autoplay`, `-autoshot`) never read or write it.
+
+## The campaign
+
+| Chapter | Where | Boss | New ideas |
+|---|---|---|---|
+| I | Drowned Belfry (7 rooms, below) | The Undertoll | movement, the hook, floor waves, the Brass Lung |
+| II | Sluice Works (10 rooms) | Pump Warden | Limpet and Porter machines, vents, the counterweight lift, the keeper gauge |
+| III | Sounding Archive (6 rooms) | Archivist of Depths | Ink Moths, Tuning Widows, echo drums, the drum key, the chute |
+| IV | Tidal Engine (7 rooms) | Tidekeeper | Ballast Knight, two governor latches, spring pads, the Night Watch record, the bypass wheel and the dawn ending |
+
+All four bosses choose their attacks at random from a seeded shuffle (a new game gets a new seed, `-seed N` replays one), within fixed fairness rules: telegraphs of at least 0.45 s and punish windows of at least 0.35 s. Details are in [docs/BOSS_DESIGN.md](docs/BOSS_DESIGN.md) and the chapter plan in [docs/CAMPAIGN_PLAN.md](docs/CAMPAIGN_PLAN.md). The route below is chapter I.
 
 ## The route
 
@@ -76,7 +88,7 @@ The critical path uses climbs of at most two tiles and pits of at most three. Th
 | Knell Jelly | Timing | Swells, brightens, a faint ring shows its full reach (0.9 s) | An expanding ring that only hurts inside its band | 1.3 s sag; harmless to touch |
 | The Undertoll | Everything above | Rise with a landing shadow / lean back / coral marks on the ceiling | **Slam** with floor shockwaves (jump them) / **Rush** across the floor (stand on a side ledge) / **Drip rain** below half health (step out of the marks) | A recovery after every attack, mouth glowing; contact is harmless then |
 
-The boss chooses deterministically: it rushes when you are far, slams when you are close, and in phase two every third attack is a rain of five drips, the middle one aimed where you stand.
+The Undertoll picks from slam, rush and (in phase two) rain in a shuffled order. A rush needs you to be at least 6 tiles away, a slam can be delayed, and in phase two some attacks chain. Its attacks and punish windows are otherwise as above.
 
 ## Rules
 
@@ -99,18 +111,24 @@ Assets/Scripts/Core/   all rules, no UnityEngine: tested headless
   Physics.cs      box vs tile collision per axis in small steps (no tunnelling), one-way ledges, drop-through
   Enemies.cs      Brine Crab and Knell Jelly state machines
   Boss.cs         The Undertoll: slam, rush, rain, shockwaves, drips, phase two
+  PumpMachinery.cs  Limpet, Porter, Pump Warden and the Ballast Knight; SluiceWorks.cs the chapter II map and route
+  ArchiveFoes.cs / SoundingArchive.cs   chapter III foes and map
+  EngineFoes.cs / TidalEngine.cs        the Tidekeeper and the chapter IV map, stations and route
+  SaveGame.cs     versioned save format; Dice.cs the seeded shuffle bags
   Level.cs        tile grid and room rectangles; RoomData.cs is the generated ASCII map
   LevelPlan.cs    pacing beats and gated connections
   RippleBell.cs   room hazards that reuse the boss shockwave
   Tuning.cs       [Serializable] tuning classes shown in the Inspector
 Assets/Scripts/Game/   Unity glue
   GameController  loop, hit-stop, room-clamped camera, HUD, F1 inspector
-  LevelView / ActorViews / Fx / Art   meshes and sprites generated in code
+  LevelView / ActorViews / Fx / Art   meshes and sprites generated in code; Engine rooms draw the finished plates
+  CampaignArt / ArchiveArt / EngineFoeView / PumpMachineView / ArchiveFoeView   the finished art (Assets/Resources)
   AudioSynth      every sound synthesised (bells from inharmonic partials)
+  AutoPlay        verification only: -autoplay <folder> plays all four chapters through the real build
   AutoTour        verification only: launch with -autoshot <folder> to screenshot every room, tell and ending, then quit
 Assets/Editor/BuildTools.cs   Drowned Bell > Create Main Scene / Build Windows (also used from batch mode)
 tests/Core.Tests              dotnet run: the checks below
-tools/rooms.py                the seven-room layout source; run python tools/rooms.py to regenerate RoomData.cs
+tools/rooms.py (+ sluice, archive_rooms.py, engine_rooms.py)   the layout sources; each regenerates its Core/*Data.cs
 ```
 
 ## Verification
@@ -124,7 +142,7 @@ What actually ran:
   - the boss bar covered the arena floor;
   - the bell rendered too dark;
   - the crab and the drip warnings were hard to see.
-- **Headless suite:** `cd tests/Core.Tests && dotnet run -c Release` passes. It covers:
+- **Headless suite:** `cd tests/Core.Tests && dotnet run -c Release` passes (256 checks as of v0.8.1: the list below is chapter I; chapters II to IV, saves, random bosses, boss fairness, smooth drawing and the Tidal Engine have their own groups, and `DIFFICULTY_SEEDS=1 dotnet run -c Release` prints the 8-seed boss table). The chapter I checks cover:
   - **Movement:** full jump height matches tuning, a short hop, coyote time accepts at 0.05 s and refuses at 0.2 s, the jump buffer works, dash distance, one air dash per airtime, no wall tunnelling, one-way ledges and drop-through.
   - **Combat:** one damage per swing, invulnerability, knockback, spikes cost a mask and return you to the safe spot, the pogo off spikes.
   - **Crab:** the lunge hits a diver standing still, backing off avoids it, and the recovery can be punished.
@@ -136,11 +154,11 @@ What actually ran:
 
 ## QA autopilot
 
-`DrownedBell.exe -autoplay <folder> [-retries N]` plays the game itself through inputs only. It lights the lamp, takes the Brass Lung, opens and climbs the shortcut, dies N times on purpose in the boss fight, then wins. It saves screenshots and a report, then quits. `-autoshot <folder>` saves a tour of fixed moments. Combine it with `-testroom` to capture the test HUD after an automated swing at the dummy. See `docs/QA_REPORT.md`.
+`DrownedBell.exe -autoplay <folder> [-retries N]` plays the game itself through inputs only. It lights the lamp, takes the Brass Lung, opens and climbs the shortcut, dies N times on purpose in the boss fight, then wins, and goes on through the Sluice Works, the Sounding Archive and the Tidal Engine (including the Night Watch) to the credits and a clean new dive. `-seed N` fixes the boss order. It saves screenshots and a report, then quits. `-autoshot <folder>` saves a tour of fixed moments. Combine it with `-testroom` to capture the test HUD after an automated swing at the dummy. See `docs/QA_REPORT.md`.
 
 ## Known issues and not yet verified
 
-- **Not yet hand-played start to finish by a person.** The route, every fight and the ending are verified by the headless simulation, and the build launches. Feel, difficulty and pacing (10 to 15 minutes is the target) still need a human playtest; use F1 and the Inspector to tune.
+- **Not yet hand-played start to finish by a person.** The routes, every fight and the ending are verified by the headless simulation and by the bot in the real Windows build (the last run, v0.8.1, cleared all four chapters with 0 runtime errors). Feel, difficulty and pacing (55 to 80 minutes for the campaign is the target) still need a human playtest, and the difficulty numbers come from scripted divers, not people; use F1 and the Inspector to tune.
 - The diver can't climb back up the Gutter Shaft. That is by design: the way back is the shortcut, and the route check proves you can always reach the winch.
 - The boss arena locks you in until the fight ends or you die, as is usual for the genre.
 - See `docs/ART_DIRECTION.md` and `docs/asset-manifest.json` for sprite dimensions, palette and display scaling.
