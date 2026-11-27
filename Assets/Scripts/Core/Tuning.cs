@@ -104,6 +104,8 @@ namespace DrownedBell.Core
         public float SlamRecover = 1.05f;
         public float WaveSpeed = 8f;
         public float WaveHeight = 0.9f;
+        /// <summary>Chance of a rush (rather than a slam) each time the diver is more than 6 tiles away. Up close it is always a slam.</summary>
+        public float FarRushChance = 0.7f;
         public float RushWindup = 0.65f;
         public float RushSpeed = 12f;
         public float RushRecover = 0.95f;

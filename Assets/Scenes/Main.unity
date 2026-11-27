@@ -219,6 +219,7 @@ MonoBehaviour:
     SlamRecover: 1.05
     WaveSpeed: 8
     WaveHeight: 0.9
+    FarRushChance: 0.7
     RushWindup: 0.65
     RushSpeed: 12
     RushRecover: 0.95

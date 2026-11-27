@@ -74,8 +74,18 @@ namespace DrownedBell.Core
         float victoryTimer;
         bool victoryPending, victoryDone;
 
-        public World(MovementTuning move = null, CombatTuning combat = null, EnemyTuning enemies = null, BossTuning boss = null, Level level = null)
+        /// <summary>
+        /// The run's random seed. The bosses pick their attacks from it (see Dice), so a new game with a new seed plays a
+        /// different fight order, a save keeps its seed, and each attempt mixes in the death count. Tests and tools that
+        /// pass no seed all get the same one, so their fights replay exactly.
+        /// </summary>
+        public int Seed { get; private set; }
+
+        public const int DefaultSeed = 0x5EED;
+
+        public World(MovementTuning move = null, CombatTuning combat = null, EnemyTuning enemies = null, BossTuning boss = null, Level level = null, int seed = DefaultSeed)
         {
+            Seed = seed;
             Move = move ?? new MovementTuning();
             Combat = combat ?? new CombatTuning();
             Enemies = enemies ?? new EnemyTuning();
@@ -103,6 +113,7 @@ namespace DrownedBell.Core
                 else Foes.Add(new Jelly(id++, s.Pos, s.Room, Enemies));
             }
             Boss = new Boss(Level.BossSpawn, BossT);
+            ReseedBosses();
             ArenaRoom = Level.HasBoss ? Level.RoomIndexAt(new Vec2(Level.BossSpawn.X, Level.BossSpawn.Y + 1f)) : -1;
             Room = Level.RoomIndexAt(Player.Body.Pos);
         }
@@ -111,7 +122,7 @@ namespace DrownedBell.Core
         {
             if (Phase != Phase.Victory || !Level.HasBoss)
                 throw new InvalidOperationException("The Sluice Works opens after the Undertoll falls.");
-            var next = new World(Move, Combat, Enemies, BossT, SluiceWorks.Build());
+            var next = new World(Move, Combat, Enemies, BossT, SluiceWorks.Build(), Seed);
             next.Time = Time;
             next.Deaths = Deaths;
             next.LungTaken = LungTaken;
@@ -125,7 +136,7 @@ namespace DrownedBell.Core
         {
             if (Phase != Phase.Victory || Chapter != Chapter.Sluice)
                 throw new InvalidOperationException("The Sounding Archive opens after the Sluice Works.");
-            var next = new World(Move, Combat, Enemies, BossT, SoundingArchive.Build());
+            var next = new World(Move, Combat, Enemies, BossT, SoundingArchive.Build(), Seed);
             next.Time = Time;
             next.Deaths = Deaths;
             next.LungTaken = LungTaken;
@@ -160,7 +171,7 @@ namespace DrownedBell.Core
         /// </summary>
         public SaveData Snapshot()
         {
-            var s = new SaveData { Chapter = Chapter, Time = Time, Deaths = Deaths, Lung = LungTaken, Gauge = GaugeFound };
+            var s = new SaveData { Chapter = Chapter, Time = Time, Deaths = Deaths, Lung = LungTaken, Gauge = GaugeFound, Seed = Seed };
             if (Chapter == Chapter.Belfry && Level.HasBoss && Boss.Dead)
             {
                 s.Chapter = Chapter.Sluice;
@@ -195,7 +206,9 @@ namespace DrownedBell.Core
         public static World Restore(SaveData s, MovementTuning move = null, CombatTuning combat = null, EnemyTuning enemies = null, BossTuning boss = null)
         {
             var w = new World(move, combat, enemies, boss,
-                s.Chapter == Chapter.Sluice ? SluiceWorks.Build() : s.Chapter == Chapter.Archive ? SoundingArchive.Build() : null);
+                s.Chapter == Chapter.Sluice ? SluiceWorks.Build() : s.Chapter == Chapter.Archive ? SoundingArchive.Build() : null,
+                s.Seed != 0 ? s.Seed : DefaultSeed);
+            w.ReseedBosses();
             w.Time = s.Time;
             w.Deaths = s.Deaths;
             w.LungTaken = s.Lung;
@@ -222,7 +235,16 @@ namespace DrownedBell.Core
             w.Player.Place(w.RespawnFeet, w.Move);
             w.Player.Health = w.Player.MaxHealth;
             w.Room = w.Level.RoomIndexAt(w.Player.Body.Pos);
+            w.ReseedBosses(); // now that the death count is known
             return w;
+        }
+
+        /// <summary>Deals every boss a fresh fight order from the run seed and the number of deaths so far.</summary>
+        void ReseedBosses()
+        {
+            Boss.Reseed(Dice.Mix(Seed, 1, Deaths));
+            Warden?.Reseed(Dice.Mix(Seed, 2, Deaths));
+            Archivist?.Reseed(Dice.Mix(Seed, 3, Deaths));
         }
 
         public void Emit(GameEventType type, Vec2 pos, int id = 0)
@@ -531,6 +553,8 @@ namespace DrownedBell.Core
             foreach (Enemy e in Foes) if ((e != Warden && e != Archivist) || e.Alive) e.Reset();
             foreach (RippleBell bell in RippleBells) bell.Reset();
             if (!Boss.Dead) Boss.Reset();
+            // Every attempt at a boss plays a new order: the death count is part of what the dice are seeded with.
+            ReseedBosses();
             Level.DoorsLocked = false;
             Phase = Phase.Playing;
             HitStop = 0f;

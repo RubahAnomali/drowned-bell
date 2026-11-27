@@ -18,7 +18,24 @@ namespace DrownedBell.Core
         public override string StateName => Beat.ToString();
         public override int RejectedTransitions => 0;
         public int Lane { get; private set; }
-        int pulses, attacks;
+        int pulses, pulseIndex, widePulse;
+        // Randomness (see Dice): the lanes, pulse counts and brace timing differ from fight to fight.
+        readonly Dice dice = new Dice(2);
+        readonly Bag braceBag = new Bag(0, 1);   // quick and delayed sweeps, dealt in random order (never three of a kind in a row)
+
+        /// <summary>A new fight order: called when the run starts and after every death.</summary>
+        public void Reseed(int seed)
+        {
+            dice.Reseed(seed);
+            braceBag.Reset();
+        }
+
+        int NextLane()
+        {
+            // Any pipe but the one that just vented, so the next jet is never in the same place.
+            int pick = dice.Int(Lane < 3 ? 2 : 3);
+            return Lane < 3 && pick >= Lane ? pick + 1 : pick;
+        }
         /// <summary>Phase two: this pulse covers two neighbouring pipes at once, leaving one lane quiet.</summary>
         public bool Wide { get; private set; }
         /// <summary>How long the current Brace lasts: a delayed swing hangs 0.4 s longer, to punish a dodge made too early.</summary>
@@ -82,8 +99,8 @@ namespace DrownedBell.Core
             base.Reset();
             Enter(MachineBeat.Idle);
             Engaged = false;
-            pulses = 0;
-            attacks = 0;
+            pulses = pulseIndex = 0;
+            widePulse = -1;
             Wide = false;
             BraceTime = 0.6f;
             Lane = 0;
@@ -106,11 +123,15 @@ namespace DrownedBell.Core
                     {
                         w.Level.DoorsLocked = true;
                         TrackX = w.Player.Body.Pos.X;
-                        Lane = MathF.Abs(dx) >= 5.5f ? 3 : dx < -2f ? 0 : dx > 2f ? 2 : 1;
-                        pulses = SecondPhase ? 4 : 3;
-                        Wide = SecondPhase;
-                        // Every other attack the sweep is a delayed swing.
-                        BraceTime = (attacks++ & 1) == 1 ? 0.95f : 0.6f;
+                        // A diver who keeps back always gets a jet under their feet; up close it sometimes does too.
+                        Lane = MathF.Abs(dx) >= 5.5f || dice.Chance(0.2f) ? 3 : dx < -2f ? 0 : dx > 2f ? 2 : 1;
+                        pulses = (SecondPhase ? 3 : 2) + dice.Int(2);
+                        pulseIndex = 0;
+                        // Below half health at least one pulse covers two pipes; the others may too.
+                        widePulse = SecondPhase ? dice.Int(pulses) : -1;
+                        Wide = SecondPhase && pulseIndex == widePulse;
+                        // The sweep is a quick brace or a delayed one, in random order.
+                        BraceTime = braceBag.Next(dice) == 1 ? 0.95f : 0.6f;
                         Enter(MachineBeat.Mark);
                     }
                     else Enter(MachineBeat.Brace);
@@ -120,7 +141,13 @@ namespace DrownedBell.Core
                     break;
                 case MachineBeat.Jet:
                     if (Elapsed < 0.5f) break;
-                    if (--pulses > 0) { Lane = (Lane + 1) % 3; Wide = SecondPhase && pulses % 2 == 1; Enter(MachineBeat.Mark); }
+                    if (--pulses > 0)
+                    {
+                        pulseIndex++;
+                        Lane = NextLane();
+                        Wide = SecondPhase && (pulseIndex == widePulse || dice.Chance(0.35f));
+                        Enter(MachineBeat.Mark);
+                    }
                     else { Facing = dx >= 0 ? 1 : -1; Enter(MachineBeat.Brace); }
                     break;
                 case MachineBeat.Brace:

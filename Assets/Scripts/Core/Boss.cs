@@ -53,8 +53,13 @@ namespace DrownedBell.Core
         readonly Vec2 home;
         int lastSwing = -1;
         float riseFromY;
-        float slamHold, echoIn = -1f;
-        int comboLeft;
+        float slamHold, echoIn = -1f, idleFor;
+        int comboLeft, lastKind = -1, repeats;
+        // Randomness (see Dice): the same seed replays the same fight, a new seed plays a new one.
+        readonly Dice dice = new Dice(1);
+        readonly Bag slamKinds = new Bag(0, 0, 0, 1);   // one delayed slam in every four, in random order
+        readonly Bag rainBag = new Bag(1, 0, 0);        // phase two: about one attack in three is rain
+        readonly Bag comboBag = new Bag(1, 0);          // phase two: about half the recoveries chain straight into a slam
         Vec2 slamAt;
         float slamFloor;
 
@@ -109,6 +114,18 @@ namespace DrownedBell.Core
                     default: return 0f;
                 }
             }
+        }
+
+        /// <summary>A new fight order: called when the run starts and after every death.</summary>
+        public void Reseed(int seed)
+        {
+            dice.Reseed(seed);
+            slamKinds.Reset();
+            rainBag.Reset();
+            comboBag.Reset();
+            lastKind = -1;
+            repeats = 0;
+            idleFor = t.IdleTime * dice.Range(0.55f, 1.6f);
         }
 
         public void Reset()
@@ -182,7 +199,7 @@ namespace DrownedBell.Core
                 case BossState.Idle:
                     Facing = dx >= 0f ? 1 : -1;
                     Body.Vel.X = Mathx.MoveToward(Body.Vel.X, 0f, 30f * dt);
-                    if (Fsm.Time >= (comboLeft > 0 ? 0.1f : t.IdleTime / Speed)) ChooseAttack(w, dx);
+                    if (Fsm.Time >= (comboLeft > 0 ? 0.1f : idleFor / Speed)) ChooseAttack(w, dx);
                     break;
                 case BossState.SlamWindup:
                 {
@@ -219,7 +236,12 @@ namespace DrownedBell.Core
                     break;
                 case BossState.SlamRecover:
                     Body.Vel.X = 0f;
-                    if (Fsm.Time >= t.SlamRecover * RecoverMul) Fsm.Go(BossState.Idle);
+                    if (Fsm.Time >= t.SlamRecover * RecoverMul)
+                    {
+                        // Phase two sometimes follows a slam with another at once.
+                        if (Phase2 && comboBag.Next(dice) == 1) comboLeft = 1;
+                        Fsm.Go(BossState.Idle);
+                    }
                     break;
                 case BossState.RushWindup:
                     // Lean away from the diver before swinging at them.
@@ -237,8 +259,8 @@ namespace DrownedBell.Core
                     Body.Vel.X = Mathx.MoveToward(Body.Vel.X, 0f, 40f * dt);
                     if (Fsm.Time >= t.RushRecover * RecoverMul)
                     {
-                        // Phase two chains a slam straight out of a rush, with no idle beat.
-                        if (Phase2) comboLeft = 1;
+                        // Phase two sometimes chains a slam straight out of a rush, with no idle beat.
+                        if (Phase2 && comboBag.Next(dice) == 1) comboLeft = 1;
                         Fsm.Go(BossState.Idle);
                     }
                     break;
@@ -270,25 +292,43 @@ namespace DrownedBell.Core
             Physics.Move(w.Level, Body, dt);
         }
 
+        /// <summary>
+        /// Picks the next attack at random, within what is fair. A rush only comes when the diver is far (6+ tiles), so it
+        /// needs time to reach them and the side ledges stay reachable; up close it is always a slam. Rain joins in
+        /// phase two. No attack is picked three times in a row. Slams may hang (a delayed swing) and, in phase two,
+        /// may chain into another slam. Even the pause between attacks varies from fight to fight.
+        /// </summary>
         void ChooseAttack(World w, float dx)
         {
             AttackCount++;
             bool combo = comboLeft > 0;
             comboLeft = 0;
-            slamHold = AttackCount % 4 == 2 ? t.SlamHold : 0f;
-            if (Phase2 && AttackCount % 3 == 0 && !combo)
+            bool far = MathF.Abs(dx) > 6f;
+            int kind = 0; // 0 slam, 1 rush, 2 rain
+            if (!combo)
+            {
+                if (far && dice.Chance(t.FarRushChance)) kind = 1;
+                if (Phase2 && rainBag.Next(dice) == 1) kind = 2;
+                if (kind == lastKind && repeats >= 2) kind = kind == 0 && far ? 1 : 0;
+            }
+            repeats = kind == lastKind ? repeats + 1 : 1;
+            lastKind = kind;
+            idleFor = t.IdleTime * dice.Range(0.55f, 1.6f);
+            slamHold = 0f;
+            if (kind == 2)
             {
                 Fsm.Go(BossState.RainWindup);
                 SpawnDrips(w);
                 w.Emit(GameEventType.BossRainWarn, Body.Pos, 0);
             }
-            else if (MathF.Abs(dx) > 6f && !combo)
+            else if (kind == 1)
             {
                 Fsm.Go(BossState.RushWindup);
                 w.Emit(GameEventType.BossRushWindup, Body.Pos, Facing);
             }
             else
             {
+                slamHold = slamKinds.Next(dice) == 1 ? t.SlamHold : 0f;
                 riseFromY = Body.Pos.Y;
                 Fsm.Go(BossState.SlamWindup);
                 w.Emit(GameEventType.BossSlamWindup, Body.Pos, 0);

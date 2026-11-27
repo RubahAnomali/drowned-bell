@@ -1,5 +1,9 @@
 # Drowned Bell QA report
 
+## Random boss fights (v0.7), 27 November 2026
+
+**Not tested.** The change was written and compiled (the Core and its test project build with no errors), but at the user's request no tests, bot runs or playthroughs were run. Expect that some headless checks may need updating: the tests were changed to rules that should hold for any seed (shuffle-bag guarantees, a forced rush for the rush tests, three or four pulses, half of the real marks under the diver), but none of that has been run, and the scripted divers (`Autopilot`, `WardenTactic`, the Archive route) and the difficulty-envelope numbers were tuned on the old fixed order. Run `dotnet run -c Release` in `tests/Core.Tests` and a `-autoplay` pass before relying on this version.
+
 ## Archive art and smooth movement (v0.6), 27 November 2026
 
 All headless checks passed, including 12 new "Smoothness" checks: Prev and Lerp are right, teleports and enemy resets do not streak, and replaying a steady run at 144, 75 and 60 Hz (with and without +-15% frame-time jitter) draws even motion (0.0000 tiles of spread per frame at 144 and 75 Hz, against 0.137 for the old drawing). Unity built Windows with 0 errors and 0 warnings. In the real build at vsync 144 Hz, 1855 steady-run frames moved the drawn diver 0 to 2 px each (old drawing: 0 to 5 px, standing still on 58% of frames). The bot played the Belfry, Sluice Works and Sounding Archive with only its planned deaths and zero runtime errors, and its Archive screenshots show the new art (shelf rooms, moth, widow, Archivist with only the real clapper swinging). Not checked by hand: how the smoothing feels on another monitor, and the browser build (not rebuilt yet).

@@ -160,11 +160,11 @@ namespace DrownedBell.Core
     public sealed class Archivist : Enemy
     {
         public const float DiveSpeed = 22f, RiseSpeed = 9f, HoverHeight = 7f;
-        /// <summary>Phase two chains every third dive: a short recovery, no hover, a quick second mark.</summary>
-        public bool Chain => SecondPhase && Dives % 3 == 0 && Dives > 0;
+        /// <summary>Phase two sometimes chains a dive: a short recovery, no hover, a quick second mark. Rolled at each landing.</summary>
+        public bool Chain { get; private set; }
         public float MarkTime => Chain ? 0.5f : SecondPhase ? 0.55f : 0.7f;
         public float RecoverTime => Chain ? 0.4f : SecondPhase ? 0.7f : 0.85f;
-        public float HoverTime => Chain ? 0.1f : 0.35f;
+        public float HoverTime => Chain ? 0.1f : hoverFor;
         public InkBeat Beat { get; private set; }
         public float Elapsed { get; private set; }
         public override bool IsBoss => true;
@@ -178,8 +178,22 @@ namespace DrownedBell.Core
         public Vec2 DropAt { get; private set; }
         public int Dives { get; private set; }
         public readonly List<Shockwave> Waves = new List<Shockwave>(4);
-        float echoIn = -1f;
+        float echoIn = -1f, hoverFor = 0.35f;
         int echoLeft;
+        // Randomness (see Dice): which silhouette is real, where the decoy stands, chained dives and the hover time.
+        readonly Dice dice = new Dice(3);
+        readonly Bag realBag = new Bag(0, 1);        // real body under the diver (0) or on the decoy spot (1), never three of a kind in a row
+        readonly Bag chainBag = new Bag(0, 0, 1);    // phase two: about one dive in three is chained
+
+        /// <summary>A new fight order: called when the run starts and after every death.</summary>
+        public void Reseed(int seed)
+        {
+            dice.Reseed(seed);
+            realBag.Reset();
+            chainBag.Reset();
+            Chain = false;
+            hoverFor = dice.Range(0.25f, 0.5f);
+        }
 
         public Archivist(int id, Vec2 feet, int room) : base(id, EnemyKind.Archivist, feet, room, 2.2f, 2.4f, 20)
         {
@@ -202,6 +216,7 @@ namespace DrownedBell.Core
             Waves.Clear();
             echoIn = -1f;
             Dives = 0;
+            Chain = false;
             DropAt = new Vec2(Home.X, Home.Y - Body.Half.Y);
         }
 
@@ -266,11 +281,12 @@ namespace DrownedBell.Core
                     {
                         float lo = r.MinX + 3.5f, hi = r.MaxX - 3.5f;
                         float under = Mathx.Clamp(feet.X, lo, hi);
-                        int side = (Dives & 2) == 0 ? 1 : -1;
-                        float other = under + side * 5f;
-                        if (other < lo || other > hi) other = under - side * 5f;
+                        int side = dice.Chance(0.5f) ? 1 : -1;
+                        float gap = dice.Range(5f, 6.5f);
+                        float other = under + side * gap;
+                        if (other < lo || other > hi) other = under - side * gap;
                         float floorY = Floor(w);
-                        bool realUnder = (Dives & 1) == 0;
+                        bool realUnder = realBag.Next(dice) == 0;
                         RealMark = new Vec2(realUnder ? under : other, floorY);
                         DecoyMark = new Vec2(realUnder ? other : under, floorY);
                         Body.Pos = new Vec2(RealMark.X, hoverY);
@@ -280,7 +296,7 @@ namespace DrownedBell.Core
                     }
                     break;
                 case InkBeat.Mark:
-                    if (Elapsed >= MarkTime) Enter(InkBeat.Dive);
+                    if (Elapsed >= MarkTime) { Enter(InkBeat.Dive); Chain = false; }
                     break;
                 case InkBeat.Dive:
                 {
@@ -291,6 +307,8 @@ namespace DrownedBell.Core
                         Body.Pos = new Vec2(RealMark.X, target);
                         DropAt = RealMark;
                         Dives++;
+                        Chain = SecondPhase && chainBag.Next(dice) == 1;
+                        hoverFor = dice.Range(0.25f, 0.5f);
                         Enter(InkBeat.Recover);
                         w.Emit(GameEventType.ArchivistLand, RealMark, Id);
                         // Every landing sends a ripple pair shortly after (0.45 s; 0.3 s below half health: time for one swing),

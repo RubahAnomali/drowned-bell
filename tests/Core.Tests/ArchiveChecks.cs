@@ -162,7 +162,7 @@ internal static class ArchiveChecks
             if (reals.Count >= 4) break;
         }
         ok(reals.Count >= 4 && spaced, "each dive shows two marks five tiles apart inside the choir");
-        ok(reals.Take(4).SequenceEqual(new[] { true, false, true, false }), "the real one alternates: under the diver, then the decoy spot");
+        ok(reals.Take(4).Count(r => r) == 2, "the real one is under the diver half the time and on the decoy spot half the time (shuffled, never three of a kind in a row)");
 
         // Punish: hits land only while it is grounded; below half health landings send an echo.
         // One hit per grounded recovery, like a careful player.

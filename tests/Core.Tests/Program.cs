@@ -136,7 +136,7 @@ internal static class Program
             if (boss.Beat == MachineBeat.Jet && boss.Beat != previous) lanes.Add(boss.Lane);
             previous = boss.Beat;
         }
-        Ok(lanes.Count == 4 && lanes.Zip(lanes.Skip(1), (x, y) => x != y).All(d => d), "overpressure vents four different pulses in a row before the sweep");
+        Ok(lanes.Count >= 3 && lanes.Count <= 4 && lanes.Zip(lanes.Skip(1), (x, y) => x != y).All(d => d), "overpressure vents three or four pulses in a row before the sweep, never the same lane twice running");
         w.Respawn();
         Ok(!boss.Engaged && boss.Health == boss.MaxHealth && !w.Level.DoorsLocked, "an unfinished Warden resets and releases the arena on respawn");
 
@@ -484,9 +484,9 @@ internal static class Program
     }
 
     // ---------------------------------------------------------------------------------------------
-    static World ArenaWorld(out RoomInfo arena)
+    static World ArenaWorld(out RoomInfo arena, float farRushChance = 0.7f)
     {
-        var w = new World();
+        var w = new World(boss: new BossTuning { FarRushChance = farRushChance });
         arena = w.Level.Rooms[w.ArenaRoom];
         Teleport(w, arena.MinX + 8.5f, arena.MinY + 6f);
         for (int i = 0; i < 4 && !w.Boss.Awake; i++) w.Update(Dt, default);
@@ -527,7 +527,7 @@ internal static class Program
         // Rush: on the floor it hits you; on a side ledge it passes under.
         foreach (bool onLedge in new[] { false, true })
         {
-            var w = ArenaWorld(out RoomInfo arena);
+            var w = ArenaWorld(out RoomInfo arena, farRushChance: 1f); // force the rush, whatever the seed
             float x = arena.MinX + 3.5f;
             float y = onLedge ? arena.MinY + 6f : arena.MinY + 2.5f;
             w.Player.Place(new Vec2(x, onLedge ? w.Level.FloorBelow(x, y) : w.Level.FloorBelow(x, arena.MinY + 2.9f)), w.Move);

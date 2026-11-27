@@ -118,8 +118,20 @@ namespace DrownedBell.Game
             SaveStore.Write(save);
         }
 
+        /// <summary>A random run seed, or the one given with -seed N.</summary>
+        static int FreshSeed()
+        {
+            string[] args = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(args, "-seed");
+            if (i >= 0 && i + 1 < args.Length && int.TryParse(args[i + 1], out int forced) && forced != 0) return forced;
+            int seed = System.Guid.NewGuid().GetHashCode();
+            return seed == 0 ? 1 : seed;
+        }
+
         void ContinueSaved()
         {
+            // A save from before seeds existed gets one now; from then on it keeps it.
+            if (save.Seed == 0) save.Seed = FreshSeed();
             NewRun(continuation: World.Restore(save, movement, combat, enemies, boss));
             BeginDive();
         }
@@ -176,7 +188,8 @@ namespace DrownedBell.Game
             if (continuation == null) audioSynth.ResetRun();
             if (worldRoot != null) Destroy(worldRoot.gameObject);
             worldRoot = new GameObject("World").transform;
-            world = continuation ?? new World(movement, combat, enemies, boss, testRoom ? TestRoom.Build() : null);
+            // A new game gets a new seed, so no two runs play the bosses in the same order (-seed N forces one, for QA).
+            world = continuation ?? new World(movement, combat, enemies, boss, testRoom ? TestRoom.Build() : null, FreshSeed());
             world.Event += OnEvent;
             levelView = new LevelView(world, worldRoot);
             crabs.Clear();

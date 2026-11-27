@@ -5,6 +5,19 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.7 (random boss fights)
+
+- The three bosses now pick their attacks at random, so no fight shows a fixed pattern and every new save plays
+  the bosses in a different order. A run seed is chosen at the start of a new game and kept in the save; each attempt
+  at a boss mixes in the death count, so a retry differs too.
+- Choices come from shuffle bags (random order, but never a long drought or three of a kind in a row) and the
+  fairness rules do not move: telegraph and punish times are fixed, and a rush needs the diver to be 6+ tiles away.
+- Undertoll: slam or rush, delayed slams, rain and chained slams in random order, with a different pause every time.
+  Warden: pulse count, which pipe vents, which pulse is double, tracked jets and quick or delayed sweeps.
+  Archivist: real or decoy, decoy side and distance, chained dives and hover time.
+- `-seed N` replays a fight order; the autoplay report prints the seed it played.
+- Saves from before v0.7 still load (they get a seed the first time they are continued).
+
 ## v0.6 (Archive art and smooth movement)
 
 - The Sounding Archive has its final pixel art (from the art pass): bookshelf rooms with green-glass niches, the

@@ -114,14 +114,14 @@ internal static class BossDesignChecks
         BossState last = BossState.Dormant;
         int maxWaves = 0, combos = 0;
         float sinceRush = -1f;
-        for (int i = 0; i < 60 * 120; i++)
+        for (int i = 0; i < 60 * 200; i++)
         {
             w.Update(Dt, default);
             BossState st = w.Boss.State;
             if (st == BossState.SlamWindup) timer += Dt;
             if (last == BossState.SlamWindup && st == BossState.SlamFall) { windups.Add(timer); timer = 0f; }
             if (st != BossState.SlamWindup && st != BossState.SlamFall) timer = 0f;
-            if (last == BossState.RushRecover && st == BossState.Idle) sinceRush = 0f;
+            if ((last == BossState.RushRecover || last == BossState.SlamRecover) && st == BossState.Idle) sinceRush = 0f;
             else if (sinceRush >= 0f)
             {
                 sinceRush += Dt;
@@ -133,10 +133,10 @@ internal static class BossDesignChecks
             last = st;
         }
         float basic = w.BossT.SlamWindup;
-        ok(windups.Count >= 5 && windups.Max() >= basic / 1.25f + w.BossT.SlamHold - 0.05f && windups.Min() <= basic + 0.05f,
+        ok(windups.Count >= 4 && windups.Max() >= basic / 1.25f + w.BossT.SlamHold - 0.05f && windups.Min() <= basic + 0.05f,
             "slam wind-ups vary, some are delayed swings: " + string.Join(", ", windups.Take(8).Select(x => x.ToString("0.00"))) + " s");
         ok(w.Boss.Phase2 && maxWaves >= 4, "below half health a slam sends a second wave pair behind the first (up to " + maxWaves + " waves at once)");
-        ok(combos >= 1, "below half health the bell chains a slam straight out of a rush (" + combos + " chained)");
+        ok(combos >= 1, "below half health the bell sometimes chains a slam straight out of a recovery (" + combos + " chained)");
     }
 
     static void Warden(Action<bool, string> ok)

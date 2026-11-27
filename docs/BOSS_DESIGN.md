@@ -15,26 +15,41 @@ All three bosses were hardened in v0.5 to play like Dark Souls bosses: they puni
 | Earned recovery | Every 7 hook hits on a **boss** mend one mask. Ordinary enemies never heal you. A bold fight can be won, a greedy one cannot. |
 | Real phases | Phase two adds new behaviour, not only speed. |
 
+## Random fights: no two saves play alike
+
+Each boss picks its attacks at random, so a fight never shows a fixed pattern. The move sets are small, so the order, the timing and the details change instead:
+
+- A **run seed** is picked when a new game starts and is kept in the save, so every new save plays the bosses in a different order, and a continued save keeps its own. Every attempt at a boss also mixes in the death count, so a retry is not a replay.
+- Choices are dealt from **shuffle bags**: the order is random, but a boss never goes a whole fight without, say, a delayed swing, and never hands out the same thing three times running.
+- The same seed always replays the same fight, which is what the tests and the QA bot use (`-seed N` on the command line forces one; the autoplay report prints the seed it used).
+- Randomness never touches the fairness rules below: telegraph and punish times are fixed, and a rush only comes when the diver is far enough to reach a ledge.
+
+| Boss | What changes from fight to fight |
+|---|---|
+| Undertoll | Slam or rush (a rush only when the diver is 6+ tiles away, 70% of the time), a delayed slam about one in four slams, rain about one attack in three in phase two, a slam chained out of about half the recoveries in phase two, and a different pause between attacks every time. |
+| Pump Warden | How many pulses (2 or 3, then 3 or 4 below half health), which pipe vents next (never the same one twice), which pulse covers two pipes, whether the first jet is tracked, and quick or delayed sweeps in shuffled order. |
+| Archivist | Whether the real silhouette lands under the diver or on the decoy spot (shuffled, never three of a kind), which side the decoy stands on and how far (5 to 6.5 tiles), which dives are chained, and how long it hovers. |
+
 ## The bosses
 
 **The Undertoll** (26 hits). Slam, rush and (phase two) rain.
 - Idle beat cut from 0.7 s to 0.45 s; slam wind-up 0.7 s; rush 12 tiles/s; every slam or rush body hit costs 2 masks.
-- Every fourth attack is a **delayed slam**: the bell rises, hangs 0.35 s at the top, then drops.
-- Phase two: a slam sends a **second wave pair** 0.55 s behind the first (jump twice), a **slam chains out of every rush** with no idle beat, and rain comes every third attack.
+- About one slam in four is a **delayed slam**: the bell rises, hangs 0.35 s at the top, then drops.
+- Phase two: a slam sends a **second wave pair** 0.55 s behind the first (jump twice), a **slam sometimes chains out of a recovery** with no idle beat, and rain comes about every third attack.
 - Punish windows: slam 1.05 s, rush 0.95 s (0.75 times that in phase two).
 
 **The Pump Warden** (22 hits). Pipes, then a sweep.
-- Three pulses in a row (four in phase two). Each is marked 0.6 s (0.45 s in phase two) before it vents.
-- If the diver keeps back 5.5 tiles or more, the first jet is **tracked**: it vents right under their feet.
-- Phase two: every other pulse covers **two neighbouring pipes** at once, leaving one lane quiet.
-- The sweep alternates a **quick brace (0.6 s) and a delayed one (0.95 s)**. It now starts at the Warden's own centre, so hugging its casing no longer works: jump it (it is low) or cross it. A landed sweep costs 2 masks.
+- Two or three pulses in a row (three or four in phase two). Each is marked 0.6 s (0.45 s in phase two) before it vents.
+- If the diver keeps back 5.5 tiles or more, the first jet is **tracked** (it vents right under their feet), and sometimes it is up close too.
+- Phase two: at least one pulse per attack covers **two neighbouring pipes** at once, leaving one lane quiet.
+- The sweep is a **quick brace (0.6 s) or a delayed one (0.95 s)**, in shuffled order. It now starts at the Warden's own centre, so hugging its casing no longer works: jump it (it is low) or cross it. A landed sweep costs 2 masks.
 - Punish window 0.85 s (0.7 s in phase two).
 
 **The Archivist of Depths** (20 hits). Two silhouettes, one real.
 - Marks last 0.7 s (0.55 s in phase two); only the real silhouette swings its clapper. A dive costs 2 masks.
 - Every landing sends a **ripple pair** 0.45 s later (0.3 s in phase two) and, in phase two, an **echo pair** 0.75 s after that.
-- Phase two: every third dive is a **chain**: 0.4 s recovery, no hover, a 0.5 s mark. Do not be greedy.
-- The real mark alternates between under the diver and the decoy spot.
+- Phase two: about one dive in three is a **chain**: 0.4 s recovery, no hover, a 0.5 s mark. Do not be greedy.
+- The real mark is under the diver half the time and on the decoy spot half the time, in shuffled order.
 - Punish window 0.85 s (0.7 s in phase two).
 
 ## Fairness rules (checked)
@@ -48,6 +63,8 @@ All three bosses were hardened in v0.5 to play like Dark Souls bosses: they puni
 ## How difficulty is measured
 
 `DIFFICULTY_TABLE=1 dotnet run -c Release` in `tests/Core.Tests` fights each boss with three scripted divers (`BossDifficulty.cs`). Each death restarts the fight with the diver back at the arena entrance, and the boss heals fully.
+
+These numbers were measured on the fixed attack order of v0.5, before the fights became random (v0.7). They have not been re-measured; run the table again before trusting them.
 
 | Boss | Reader (sees every tell) | Greedy (walks up, swings, never dodges) | Idle (stands still) |
 |---|---|---|---|

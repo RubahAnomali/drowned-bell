@@ -95,6 +95,7 @@ namespace DrownedBell.Game
             var t0 = Time.realtimeSinceStartup;
             var closed = new NavGraph(false, game.movement, game.combat);
             var open = new NavGraph(true, game.movement, game.combat);
+            report.Add("run seed: " + w.Seed + " (replay this order with -seed " + w.Seed + ")");
             report.Add("movement graph: " + closed.Nodes.Count + " spots, built in " + (Time.realtimeSinceStartup - t0).ToString("0.0") + "s");
             pilot = new Autopilot(w, closed, open, retries);
             game.SetPilot(pilot.Next);

@@ -25,6 +25,8 @@ namespace DrownedBell.Core
         public bool Gauge, Bypass, Lift, Key, WardenDown;
         /// <summary>Archive: second keeper record, drum key, Archivist beaten, sea-gate order taken. Optional in the file (added after v0.3).</summary>
         public bool Ledger, DrumKey, ArchivistDown, Order;
+        /// <summary>The run seed the bosses roll their attacks from. 0 (a save from before v0.7) means the game picks a new one when it continues.</summary>
+        public int Seed;
 
         public string Serialize()
         {
@@ -46,6 +48,7 @@ namespace DrownedBell.Core
             Put("drumkey", DrumKey);
             Put("archivist", ArchivistDown);
             Put("order", Order);
+            Put("seed", Seed);
             Put("end", "ok");
             return sb.ToString();
         }
@@ -83,6 +86,7 @@ namespace DrownedBell.Core
                 s.DrumKey = Optional("drumkey");
                 s.ArchivistDown = Optional("archivist");
                 s.Order = Optional("order");
+                if (map.TryGetValue("seed", out string seedText)) s.Seed = int.Parse(seedText, CultureInfo.InvariantCulture);
             }
             catch (Exception e) when (e is KeyNotFoundException || e is FormatException || e is OverflowException)
             {

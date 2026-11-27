@@ -1,5 +1,9 @@
 # Drowned Bell handoff notes
 
+## Random boss fights, 27 November 2026 (v0.7)
+
+Bosses pick attacks at random: `Core/Dice.cs` (a seeded xorshift `Dice` and a shuffle `Bag`), `Boss.ChooseAttack`, the Warden's engage and pulse code in `PumpMachinery.cs` and the Archivist's hover, landing and chain code in `ArchiveFoes.cs`. `World.Seed` (default `World.DefaultSeed` for tests and tools) is mixed with the boss and the death count by `World.ReseedBosses` at construction and on every respawn; `SaveData.Seed` stores it; `GameController.FreshSeed` picks a new one for a new game (`-seed N` forces one). The v0.7 change was written and compiled but its tests and playthroughs were deliberately NOT run, at the user's request: run `dotnet run -c Release` in `tests/Core.Tests` first, and expect that the Pilot and difficulty-envelope checks (`BossDifficulty`, `BossDesignChecks.Envelope`) may need the scripted divers or the numbers adjusted. `BossTuning.FarRushChance` lets a test force the rush.
+
 ## Art and smooth movement, 27 November 2026 (v0.6)
 
 The art pass for the Archive and the Warden is in (`Game/ArchiveArt.cs`, `Resources/Archive*.png`, `WardenPoses.png`; see `docs/ART_DIRECTION.md` and the manifest). Smooth movement: `Body.Prev` is set at the start of every `World.Update`; every view draws `Interp.Of(body)` (`Game/Interp.cs`), alpha = the part of a step elapsed (`GameController.LateUpdate`). Core rules never read `Prev`. QA: `SmoothnessChecks.cs` (headless) and `-autoplay <dir> -smoothtest [-nointerp]` (real build; the report's `smoothness:` line). If you add a moving thing, draw it through `Interp.Of`.
