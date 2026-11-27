@@ -1,5 +1,7 @@
 # Drowned Bell handoff notes
 
+For artwork, start with the [artist handoff log](../art/ART_LOG.md). Append an entry after every art creation or revision. The latest entry records the four-chapter review and the Night Watch collected-state artwork awaiting integration.
+
 ## Art review through Chapter III
 
 The Windows art-review ZIP is Builds/Drowned-Bell-Archive-Art-Windows-x64.zip. A fresh extraction reached Archive victory with the ledger, drum key and sea-gate order, then restarted with zero runtime errors (docs/qa-archive-art-preview.txt). In-game previews are docs/screenshots/warden-vent.gif, warden-sweep.gif, and archive-attack-poses.gif. The brighter Ink Moth wing edges were verified against Silt Stacks shelving. Chapter IV environments, actors, dawn ending art and final credits remain planned. The art-review ZIP is distinct from later gameplay builds.

@@ -36,7 +36,7 @@ public static class BuildTools
         if (!File.Exists(ScenePath)) CreateScene();
         PlayerSettings.productName = "Drowned Bell";
         PlayerSettings.companyName = "RubahAnomali";
-        PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+        PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
         PlayerSettings.defaultScreenWidth = 1600;
         PlayerSettings.defaultScreenHeight = 900;
         PlayerSettings.resizableWindow = true;

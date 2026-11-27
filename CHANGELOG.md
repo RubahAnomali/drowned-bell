@@ -5,6 +5,11 @@
   A version branch is a frozen snapshot: nothing new is committed to it.
 - To play or build an old version: `git switch v0.1`. Come back with `git switch main`.
 
+## v0.8.1 (full screen)
+
+- The Windows build starts full screen (borderless window) and the mouse cursor is hidden. The QA modes (`-autoplay`, `-autoshot`) stay windowed.
+- Full check: 256 headless checks, the 8-seed difficulty table and a four-chapter bot run on seed 777 all pass with 0 runtime errors.
+
 ## v0.8 (the Tidal Engine, chapter IV)
 
 - Chapter IV is playable: seven rooms on the finished room plates. Service Dock (lamp and a model of the reversal

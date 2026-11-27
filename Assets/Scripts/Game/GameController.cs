@@ -94,6 +94,11 @@ namespace DrownedBell.Game
             displayCamera.cullingMask = 0;
             displayCamera.depth = cam.depth + 1f;
             audioSynth = new AudioSynth(gameObject);
+            // Full screen with no mouse cursor (the QA modes keep a window so screenshots and resizing work).
+            Cursor.visible = false;
+            if (!GameInput.Web && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-autoplay") < 0
+                && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-autoshot") < 0)
+                Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
             shakeStrength = PlayerPrefs.GetFloat("ShakeStrength", 1f);
             reducedFlashing = PlayerPrefs.GetInt("ReducedFlashing", 0) != 0;
             // In a browser, -1 follows the display's refresh; a fixed rate there would drop requestAnimationFrame.
