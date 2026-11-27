@@ -8,9 +8,8 @@ The diver, enemies, landmarks and room tiles use original code-authored pixel ar
 
 ## Play
 
-- **Windows download:** extract `Builds/Drowned-Bell-Archive-Art-Windows-x64.zip` and open `Drowned Bell/DrownedBell.exe`. The folder includes the Unity runtime and a short controls guide. The unpackaged release player is `Builds/ArchiveArt/DrownedBell.exe`. For a new download, use **Drowned Bell > Build Windows** in Unity and then run `python tools/package_windows.py --output Builds/Drowned-Bell-Archive-Art-Windows-x64.zip` from the project root.
-- **In the browser (v0.8.1, all four chapters, saves in the browser):** https://rubahanomali.vercel.app/games/drowned-bell/ . The editor command **Drowned Bell > Build Web** writes the browser build to `Builds/WebGL/`; the portfolio's `npm run sync:games` copies it to the site.
-- **Windows full screen:** the Windows build starts full screen (borderless) with the mouse cursor hidden. The QA modes stay windowed. The newest player is `Builds/Windows/DrownedBell.exe` after **Drowned Bell > Build Windows**; the zip above is an older art-review package.
+- **On Windows:** build the player with **Drowned Bell > Build Windows** in Unity (or `Unity.exe -batchmode -executeMethod BuildTools.BuildWindows`); it writes `Builds/Windows/DrownedBell.exe`. The build starts full screen (borderless) with the mouse cursor hidden; the QA modes stay windowed. `python tools/package_windows.py --output <zip>` packs it with the Unity runtime and a short controls guide.
+- **Not played in the browser any more.** The WebGL build target still exists (**Drowned Bell > Build Web**), but the game is no longer hosted on the portfolio site.
 - **In the editor:** Unity 6.6 (6000.6.10f1). Open `Assets/Scenes/Main.unity` and press Play. Any other scene also works, because `Bootstrap` creates the game if the scene has none.
 
 | Action | Keys |
@@ -22,14 +21,14 @@ The diver, enemies, landmarks and room tiles use original code-authored pixel ar
 | Continue or new game | Title screen: Enter or click continues your saved run, N starts a new game |
 | Pause | Esc |
 | Mute | M |
-| Inspector (hitboxes, states) | F1 or I (I in the browser) |
+| Inspector (hitboxes, states) | F1 or I |
 | Test room | T on the title screen, or launch with `-testroom`. Pause and press T to return to the title |
 | Shake strength and reduced flashing | 1 and 2 while paused (F5 and F6 also work in the Windows build) |
 | Quit (title, pause, ending) | Q (Windows build only) |
 
 The bosses are built to be hard but fair (see [docs/BOSS_DESIGN.md](docs/BOSS_DESIGN.md)): a direct hit costs two masks, and every 7 hook hits on a boss mend one. A down-swing in the air bounces off enemies and spikes (pogo) and gives back the air dash. When the bell rises for a slam, you can run underneath it to the open side.
 
-Progress saves itself at lamps and the lift, pickups, opened shortcuts, boss clears and every respawn. Continue wakes you at the last lamp or lift with full health. One save slot: `drowned-bell-save.txt` in Unity's persistent data folder (on Windows, `%USERPROFILE%\AppData\LocalLow\RubahAnomali\Drowned Bell`; in the browser, the site's local storage). Finishing the Tidal Engine (the end of the campaign) clears it, so the next dive starts fresh. QA runs (`-autoplay`, `-autoshot`) never read or write it.
+Progress saves itself at lamps and the lift, pickups, opened shortcuts, boss clears and every respawn. Continue wakes you at the last lamp or lift with full health. One save slot: `drowned-bell-save.txt` in Unity's persistent data folder (on Windows, `%USERPROFILE%\AppData\LocalLow\RubahAnomali\Drowned Bell`; in a WebGL build, the browser's local storage). Finishing the Tidal Engine (the end of the campaign) clears it, so the next dive starts fresh. QA runs (`-autoplay`, `-autoshot`) never read or write it.
 
 ## The campaign
 

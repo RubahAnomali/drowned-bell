@@ -5,6 +5,10 @@
   There are no version branches any more (the old ones became these tags).
 - To play or build an old version: `git switch --detach v0.1`. Come back with `git switch main`.
 
+## v0.8.2 (no browser play)
+
+- The game is no longer hosted for play in the browser on the portfolio site: the Play link and the web build are gone from the site (the game stays featured there). The README now describes the Windows build only; the WebGL build target is kept in the editor.
+
 ## v0.8.1 (full screen)
 
 - The Windows build starts full screen (borderless window) and the mouse cursor is hidden. The QA modes (`-autoplay`, `-autoshot`) stay windowed.
