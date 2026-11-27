@@ -1,6 +1,6 @@
 # Start here: taking over Drowned Bell
 
-Written 28 November 2026 for the next AI (or person) who continues this project. Read this first, then `README.md`
+Written 28 November 2026 for the next AI (or person) who continues this project. Read this first, then `docs/NEXT_TASKS.md` (the job list for the next AI), `README.md`
 (how the game plays), `CHANGELOG.md` (what each version added) and `docs/HANDOFF_NOTES.md` (long history, newest last).
 
 ## 1. What this is

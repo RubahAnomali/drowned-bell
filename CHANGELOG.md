@@ -5,6 +5,10 @@
   There are no version branches any more (the old ones became these tags).
 - To play or build an old version: `git switch --detach v0.1`. Come back with `git switch main`.
 
+## v0.8.4 (job list)
+
+- New `docs/NEXT_TASKS.md`: the ordered job list for the next developer (editor preview, Windows download, Engine plate polish, Undertoll difficulty check, human playtest, housekeeping) with a definition of done and a list of things not to do. Docs only.
+
 ## v0.8.3 (handover guide)
 
 - New `docs/START_HERE.md`: what the project is, the owner's rules, how to test, build, run the QA bot and release, the design rules that must not break, the current state and the loose ends. Docs only, no game change.
