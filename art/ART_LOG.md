@@ -25,3 +25,21 @@ After every art creation or revision, append a dated entry here in the same work
 1. **Game integration owner:** Select the collected plate once the third record is owned, including after reload. Compare the shelf before pickup, after the banner clears and after resuming the save. The alternative plate is currently only in the art folder. [Original pickup evidence](../docs/screenshots/engine_watch_record.png).
 2. **Artist:** When current build captures are available, inspect the Archive clapper against the shelves and the Tidekeeper's hammer versus vertical slam at native 512 × 288. Capture the peak windups without labels before deciding whether either pose needs another cel.
 3. **Artist:** Inspect the open governor latch and rotating bypass wheel against their painted backgrounds. Both have state overlays. Check for a second handle or rim before preparing additional clean plates. This is a verification item, not a confirmed defect.
+
+## 28 November 2026 · All campaign room plates
+
+**Delivered.** [Room art index and four galleries](Rooms/README.md). New originals and exports share a basename in `art/Rooms/I-Belfry` (7), `II-Sluice` (7), `III-Archive` (6) and `Test` (1). The seven existing Chapter IV plates complete the 27-room campaign. The movement lab is an additional room.
+
+**Design.** The Belfry uses organ banks, pointed nave windows and bell rigging. The Works uses pressure lines, impellers and sediment hoppers. The Archive uses catalogue shelves, listening cells, an engraved wall diagram and recording horns. Each editable source separates the wall, landmark, surface detail and fixed terrain so the environment can be adjusted around interactive sprites.
+
+**Verified.** Matched room names and bounds against RoomData, SluiceWorks, ArchiveData, EngineData and TestRoom. Checked every newly painted rock-top and one-way landing edge against its grid row. Inspected the four galleries. Exported all 21 new Aseprite documents using the installed Aseprite application and compared each export with its PNG pixel-for-pixel. Wide and tall rooms retain their full map extents.
+
+**Build status and next work.** This was an art-only pass. The 21 new plates are outside Unity and have no new standalone captures. For integration, first compare the scrolling Choir Gallery and Gutter Shaft at room boundaries. Then check live doors, pickups, enemy windups and repeated landmarks against the plates before capturing all chapters. The previous entry tracks the separate Chapter IV state and readability checks.
+
+## 28 November 2026 · Fullscreen player and enemy readability
+
+**Exports.** [Fullscreen review, stills and attack reel](Rooms/Fullscreen/README.md). Composited the player, room actors and attack poses over all four chapters using the existing room PNGs, game sprite atlases and pixel-map definitions. Produced 31 fullscreen stills, four native-size pose GIFs and one 1920 × 1080 viewing reel. The current display is 1920 × 1080 and the game's display-rectangle formula uses 3.75× point scaling at this size.
+
+**Checked.** Inspected all room compositions and compared the peak poses for the crab, Warden, Archivist and Tidekeeper at native size. All 31 fullscreen PNGs round-tripped through 512 × 288 pixel-for-pixel. Verified the MP4 dimensions and 31.47-second duration. These are staged art studies; the live game window was not operated.
+
+**Next artist.** Start with the Tidekeeper hammer versus wave windup against the gate hardware. Capture them without text or damage lanes to test recognition before altering either silhouette. Then test discovery of the Impeller Well drain, Listening Cells climb and Condenser hatch with a viewer who has not seen the maps. The clapper remains visible in the staged moving comparison. Its readability during actual combat with damage effects still needs a build capture. No room plate or actor master changed during this pass.

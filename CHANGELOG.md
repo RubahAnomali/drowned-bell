@@ -5,6 +5,10 @@
   There are no version branches any more (the old ones became these tags).
 - To play or build an old version: `git switch --detach v0.1`. Come back with `git switch main`.
 
+## v0.8.3 (handover guide)
+
+- New `docs/START_HERE.md`: what the project is, the owner's rules, how to test, build, run the QA bot and release, the design rules that must not break, the current state and the loose ends. Docs only, no game change.
+
 ## v0.8.2 (no browser play)
 
 - The game is no longer hosted for play in the browser on the portfolio site: the Play link and the web build are gone from the site (the game stays featured there). The README now describes the Windows build only; the WebGL build target is kept in the editor.

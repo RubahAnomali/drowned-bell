@@ -1,6 +1,6 @@
 # Drowned Bell handoff notes
 
-For artwork, start with the [artist handoff log](../art/ART_LOG.md). Append an entry after every art creation or revision. The latest entry records the four-chapter review and the Night Watch collected-state artwork awaiting integration.
+For artwork, start with the [artist handoff log](../art/ART_LOG.md). Append an entry after every art creation or revision. The 28 November entry links the complete campaign room art, editable sources, and the remaining in-game visual checks.
 
 ## Art review through Chapter III
 
