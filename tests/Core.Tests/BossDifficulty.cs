@@ -54,9 +54,9 @@ internal static class BossDifficulty
         };
     }
 
-    public static Result Undertoll(NavGraph closed, NavGraph open, Style style, float cap = 600f, int maxDeaths = 12)
+    public static Result Undertoll(NavGraph closed, NavGraph open, Style style, float cap = 600f, int maxDeaths = 12, int seed = World.DefaultSeed)
     {
-        var w = new World();
+        var w = new World(seed: seed);
         w.Level.GrateOpen = true;
         w.Player.Place(w.Level.Checkpoint, w.Move);
         w.Update(Dt, default);
@@ -65,13 +65,19 @@ internal static class BossDifficulty
         pilot.StartAt(Autopilot.Goal.Arena);
         var at = new Vec2(arena.MinX + 8.5f, arena.MinY + 6f);
         w.Player.Place(new Vec2(at.X, w.Level.FloorBelow(at.X, at.Y)), w.Move);
+        if (Environment.GetEnvironmentVariable("DIFFICULTY_TRACE") == "1" && style == Style.Reader)
+            w.Event += e =>
+            {
+                if (e.Type == GameEventType.PlayerHurt || e.Type == GameEventType.PlayerDied)
+                    Console.WriteLine($"   {w.Time:0.0} {e.Type} hp {e.Id} boss {w.Boss.State} t{w.Boss.Fsm.Time:0.00} hpB {w.Boss.Health} p2 {w.Boss.Phase2} bx {w.Boss.Body.Pos.X:0.0} diver {w.Player.Body.Pos.X:0.0},{w.Player.Body.Pos.Y:0.0} waves {w.Boss.Waves.Count} drips {w.Boss.Drips.Count}");
+            };
         Func<PlayerInput> router = style == Style.Reader ? pilot.Next : style == Style.Greedy ? () => Greedy(w, w.Boss.Body.Pos.X) : () => default;
         return Trial(w, router, () => w.Boss.Dead, cap, maxDeaths, at);
     }
 
-    public static Result Warden(Style style, float cap = 600f, int maxDeaths = 12)
+    public static Result Warden(Style style, float cap = 600f, int maxDeaths = 12, int seed = World.DefaultSeed)
     {
-        var w = new World(level: SluiceWorks.Build());
+        var w = new World(level: SluiceWorks.Build(), seed: seed);
         w.Level.GrateOpen = true;
         w.Player.Place(w.Level.LiftLamp.Value, w.Move);
         w.Update(Dt, default);
@@ -81,9 +87,9 @@ internal static class BossDifficulty
         return Trial(w, router, () => !w.Warden.Alive, cap, maxDeaths, new Vec2(style == Style.Idle ? w.Warden.Home.X - 6f : room.MinX + 3f, room.MinY + 3f));
     }
 
-    public static Result Archivist(Style style, float cap = 600f, int maxDeaths = 12)
+    public static Result Archivist(Style style, float cap = 600f, int maxDeaths = 12, int seed = World.DefaultSeed)
     {
-        var w = new World(level: SoundingArchive.Build());
+        var w = new World(level: SoundingArchive.Build(), seed: seed);
         w.Level.GrateOpen = true;
         w.Widow.Alive = false;
         w.Level.KeyOpen = true;
@@ -99,6 +105,31 @@ internal static class BossDifficulty
         Func<PlayerInput> router = style == Style.Reader ? () => SoundingArchive.RouteInput(w, takeLedger: false)
             : style == Style.Greedy ? () => Greedy(w, w.Archivist.Engaged ? w.Archivist.Body.Pos.X : w.Archivist.Home.X) : () => default;
         return Trial(w, router, () => !w.Archivist.Alive, cap, maxDeaths, new Vec2(style == Style.Idle ? w.Archivist.Home.X - 6f : room.MinX + 4f, room.MinY + 3f));
+    }
+
+    /// <summary>The reader and the greedy diver against several run seeds: random fights must stay beatable and stay punishing for every order.</summary>
+    public static void SeedTable(int seeds = 8)
+    {
+        var closed = new NavGraph(false);
+        var open = new NavGraph(true);
+        foreach (var (name, run) in new (string, Func<Style, int, Result>)[]
+        {
+            ("Undertoll", (s, seed) => Undertoll(closed, open, s, 420f, 8, seed)),
+            ("Pump Warden", (s, seed) => Warden(s, 420f, 8, seed)),
+            ("Archivist", (s, seed) => Archivist(s, 420f, 8, seed)),
+        })
+        {
+            var readers = new List<Result>();
+            var greedy = new List<Result>();
+            for (int i = 1; i <= seeds; i++)
+            {
+                int seed = i * 7919;
+                readers.Add(run(Style.Reader, seed));
+                greedy.Add(run(Style.Greedy, seed));
+            }
+            Console.WriteLine($"{name,-12} reader : " + string.Join("  ", readers.Select(r => r.Won ? r.Deaths + "d/" + r.Seconds.ToString("0") + "s" : "NOT(" + r.Deaths + "d)")));
+            Console.WriteLine($"{name,-12} greedy : " + string.Join("  ", greedy.Select(r => (r.Won ? "WON" : "first death " + (r.FirstDeathAt < 0 ? "never" : r.FirstDeathAt.ToString("0") + "s")))));
+        }
     }
 
     public static void Table()

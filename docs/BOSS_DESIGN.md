@@ -62,14 +62,14 @@ Each boss picks its attacks at random, so a fight never shows a fixed pattern. T
 
 ## How difficulty is measured
 
-`DIFFICULTY_TABLE=1 dotnet run -c Release` in `tests/Core.Tests` fights each boss with three scripted divers (`BossDifficulty.cs`). Each death restarts the fight with the diver back at the arena entrance, and the boss heals fully.
+`DIFFICULTY_SEEDS=1 dotnet run -c Release` in `tests/Core.Tests` fights each boss with scripted divers (`BossDifficulty.cs`) on eight different run seeds. Each death restarts the fight (the boss heals fully) with the diver back at the arena entrance. The **reader** sees every tell perfectly and plays with ordinary inputs (move, dash, jump, aimed swing). The **greedy** diver walks up and swings without ever dodging.
 
-These numbers were measured on the fixed attack order of v0.5, before the fights became random (v0.7). They have not been re-measured; run the table again before trusting them.
+| Boss | Reader, 8 seeds | Greedy, 8 seeds |
+|---|---|---|
+| Undertoll | wins 5 of 8 within 7 minutes (0 to 3 deaths, 113 to 314 s); the other three also win with more time (4, 4 and 8 deaths, 583 to 809 s) | first death at 5 to 6 s, never wins |
+| Pump Warden | wins all 8 with no deaths (66 to 81 s) | first death at 10 to 17 s, never wins |
+| Archivist | wins all 8 with no deaths (64 to 93 s) | first death at 21 to 22 s, never wins |
 
-| Boss | Reader (sees every tell) | Greedy (walks up, swings, never dodges) | Idle (stands still) |
-|---|---|---|---|
-| Undertoll | wins, 0 deaths, 99 s | never wins, first death at 5.5 s | first death at 11.6 s |
-| Pump Warden | wins, 0 deaths, 100 s | never wins, first death at 16.6 s | first death at 23.3 s |
-| Archivist | wins, 0 deaths, 78 s | never wins, first death at 21.3 s | first death at 7.6 s |
+An idle diver dies to every boss too (checked on the default seed).
 
-**What this does and does not show.** The reader is a script that knows every state exactly, so it is a no-hit ceiling, not a human: it shows each boss can be beaten fairly, and that the greedy and idle styles are punished hard. It cannot say how many tries a real first-time player will need, and it should not be read as "as hard as a specific Dark Souls boss". That needs people playing it. If real players find a boss too easy or too cruel, the numbers to move are in `BossTuning` (Undertoll), `PumpMachinery.cs` (Warden) and `ArchiveFoes.cs` (Archivist); the checks above show which rules must stay.
+**What this does and does not show.** The reader is a script that knows every state exactly, so it is a no-hit ceiling, not a human: it shows each boss can be beaten on every tested order, that the Undertoll is the hardest, and that greedy play is punished. It cannot say how many tries a real first-time player will need, and it should not be read as "as hard as a specific Dark Souls boss". That needs people playing it. If real players find a boss too easy or too cruel, the numbers to move are in `BossTuning` (Undertoll), `PumpMachinery.cs` (Warden) and `ArchiveFoes.cs` (Archivist); the checks above show which rules must stay.

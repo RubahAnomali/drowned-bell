@@ -17,6 +17,7 @@
   Archivist: real or decoy, decoy side and distance, chained dives and hover time.
 - `-seed N` replays a fight order; the autoplay report prints the seed it played.
 - Saves from before v0.7 still load (they get a seed the first time they are continued).
+- Checked over eight seeds: the Warden and Archivist fall to a flawless scripted diver every time, the Undertoll is the hardest, and swinging without dodging is punished everywhere (docs/BOSS_DESIGN.md).
 
 ## v0.6 (Archive art and smooth movement)
 
