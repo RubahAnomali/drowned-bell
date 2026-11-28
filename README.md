@@ -159,7 +159,7 @@ What actually ran:
 
 ## Known issues and not yet verified
 
-- **Not yet hand-played start to finish by a person.** The routes, every fight and the ending are verified by the headless simulation and by the bot in the real Windows build (the last run, v0.8.1, cleared all four chapters with 0 runtime errors). Feel, difficulty and pacing (55 to 80 minutes for the campaign is the target) still need a human playtest, and the difficulty numbers come from scripted divers, not people; use F1 and the Inspector to tune.
+- **Playtested by hand.** The author has played the game personally and had friends play it. The routes, every fight and the ending are also verified by the headless simulation and by the bot in the real Windows build (the last run, v0.8.1, cleared all four chapters with 0 runtime errors). No formal playtest data (completion times, death counts) was recorded, so the 55 to 80 minute campaign target and the difficulty numbers still come from scripted divers rather than measured players; use F1 and the Inspector to tune.
 - The diver can't climb back up the Gutter Shaft. That is by design: the way back is the shortcut, and the route check proves you can always reach the winch.
 - The boss arena locks you in until the fight ends or you die, as is usual for the genre.
 - See `docs/ART_DIRECTION.md` and `docs/asset-manifest.json` for sprite dimensions, palette and display scaling.
