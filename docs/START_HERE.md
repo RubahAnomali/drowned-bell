@@ -128,8 +128,9 @@ chapters in the real Windows build on seeds 1234 and 777 with 0 runtime errors. 
 
 Not done or not verified:
 
-- **No human has played the game start to finish.** Feel, difficulty and pacing (the target is 55 to 80 minutes) are unknown.
-  This is the most valuable next step: get a person to play and write down where they die, stall or get confused.
+- **Played by hand, but not measured.** The owner has played the game and had friends play it, so feel and difficulty have been judged by real players.
+  No formal data was recorded (completion times, where people died, how long each boss took), so the 55 to 80 minute target and the
+  difficulty numbers are still only scripted guesses. A short written playtest with real numbers is the next most valuable step.
 - `Assets/Editor/PreviewTools.cs` (menu **Drowned Bell > Preview**, draws a chapter in the Scene view without pressing Play) was
   written while the owner had Unity open, so it was **never compiled or run and is not committed**. Compile it, try each
   entry, fix errors, then commit it (or delete it).

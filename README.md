@@ -6,7 +6,7 @@ The diver, enemies, landmarks and room tiles use original code-authored pixel ar
 
 **Taking over the project?** Read [docs/START_HERE.md](docs/START_HERE.md) first, then the job list in [docs/NEXT_TASKS.md](docs/NEXT_TASKS.md).
 
-**Versions:** `main` is the current version; each finished version is a GitHub Release with a tag (`v0.1` to `v0.8.1`), listed under [Releases](https://github.com/RubahAnomali/drowned-bell/releases). There are no version branches. See [CHANGELOG.md](CHANGELOG.md).
+**Versions:** `main` is the current version; each finished version is a GitHub Release with a tag (`v0.1` to `v0.8.4`), listed under [Releases](https://github.com/RubahAnomali/drowned-bell/releases). There are no version branches. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Play
 

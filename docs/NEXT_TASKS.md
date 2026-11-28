@@ -64,8 +64,8 @@ inside the bell (a bot weakness, not necessarily a boss problem). Investigate wi
 
 ## Task 5. Prepare a human playtest (medium, needs the owner)
 
-Nobody has played the whole game by hand, and the difficulty and pacing numbers are only scripted guesses. You cannot do this yourself,
-but you can make it easy:
+The owner and friends have played the game by hand, but nothing was recorded, so the difficulty and pacing numbers are still only
+scripted guesses. You cannot run a playtest yourself, but you can make a measured one easy:
 
 - Write `docs/PLAYTEST.md`: a one-page sheet for a tester (how to start, controls, what to note per chapter: where they died, where they
   were lost, how long each boss took, anything unclear), plus a table to fill in.
